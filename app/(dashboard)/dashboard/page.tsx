@@ -444,7 +444,7 @@ export default function DashboardPage() {
                     <span className="text-sm text-white/40">{reports.length} total</span>
                     {reports.length > 0 && (
                       <Link 
-                        href="/insights" 
+                        href="/reports" 
                         className="text-sm text-[#0071e3] hover:text-[#0077ed] font-medium"
                       >
                         View All →
