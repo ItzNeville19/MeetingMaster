@@ -1,0 +1,19 @@
+{
+  "goals": [
+    "Build a B2B SaaS called LifeØS",
+    "Users upload documents or photos.",
+    "Backend extracts text using OCR, sends to GPT models for analysis, returns a prioritized compliance report.",
+    "Generate a PDF with the findings.",
+    "Use Firebase for file storage.",
+    "Use Stripe for subscriptions with monthly tiers.",
+    "Ship a working MVP fast. Code should be clean, modular, and simple."
+  ],
+  "style": {
+    "language": "typescript",
+    "framework": "Next.js + Tailwind",
+    "backend": "Next.js API Routes",
+    "database": "Firebase",
+    "auth": "Clerk"
+  }
+}
+
