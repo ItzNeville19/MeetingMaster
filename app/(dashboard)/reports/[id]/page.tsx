@@ -633,7 +633,7 @@ export default function ReportPage() {
             separateDoc.setFont('helvetica', 'bold');
             separateY = addWrappedTextToDoc(documentName, separateMargin, separateY, separateContentWidth, 10, separateDoc);
             separateY += 10;
-            
+        
             // Introduction
             separateDoc.setFontSize(10);
             separateDoc.setFont('helvetica', 'normal');
@@ -645,7 +645,7 @@ export default function ReportPage() {
               separateContentWidth,
               6,
               separateDoc
-            );
+        );
             separateY += 20;
             
             // Add divider
@@ -653,7 +653,7 @@ export default function ReportPage() {
             separateDoc.setLineWidth(0.5);
             separateDoc.line(separateMargin, separateY, separatePageWidth - separateMargin, separateY);
             separateY += 15;
-            
+        
             // Parse and render content - ensure we have actual content
             const contentToParse = content as string;
             if (!contentToParse || contentToParse.trim().length === 0) {
@@ -766,7 +766,7 @@ export default function ReportPage() {
             // Save this PDF with 110% reliable error handling
             try {
               const baseFileName = report.fileName.replace(/\.[^/.]+$/, '') || 'Compliance_Documents';
-              const dateStr = new Date(report.createdAt).toISOString().split('T')[0];
+        const dateStr = new Date(report.createdAt).toISOString().split('T')[0];
               const docTypeFileName = docType.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
               const fileName = `${baseFileName}_${docTypeFileName}_${dateStr}.pdf`;
               separateDoc.save(fileName);
@@ -1460,7 +1460,7 @@ export default function ReportPage() {
               <div className="flex flex-col items-end gap-4">
                 {/* Make it Even Better Button - Show for both generated AND uploaded documents */}
                 {(isGeneratedDoc || report?.analysis) && (
-                  <button
+                <button
                     onClick={() => {
                       setChatbotMode('improve');
                       setShowChatbot(true);
@@ -1499,50 +1499,50 @@ export default function ReportPage() {
                         setShowChatbot(true);
                       }}
                       className="flex items-center gap-2.5 px-6 py-3 bg-[#34c759] text-white rounded-full font-semibold hover:bg-[#30d158] transition-colors shadow-md shadow-[#34c759]/20"
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      Continue with JC
-                    </button>
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  Continue with JC
+                </button>
                   )}
 
-                  {/* Download PDF Button - different text for generated vs audited */}
-                  <button
-                    onClick={downloadPdf}
-                    disabled={generatingPdf}
+                {/* Download PDF Button - different text for generated vs audited */}
+                <button
+                  onClick={downloadPdf}
+                  disabled={generatingPdf}
                     className="flex items-center gap-2.5 px-6 py-3 bg-white/10 text-white rounded-full font-semibold hover:bg-white/20 transition-colors disabled:opacity-50 border border-white/10"
-                  >
-                    {generatingPdf ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        {isGeneratedDoc ? 'Download Documents PDF' : 'Download Audit Report PDF'}
-                      </>
-                    )}
-                  </button>
+                >
+                  {generatingPdf ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      {isGeneratedDoc ? 'Download Documents PDF' : 'Download Audit Report PDF'}
+                    </>
+                  )}
+                </button>
                 </div>
               </div>
 
-              {/* Risk Score Badge - only show for audits, not generated documents */}
-              {!isGeneratedDoc && (
-                <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center ${
-                  analysis.overallRiskScore >= 7 ? 'bg-[#ff3b30]/20' :
-                  analysis.overallRiskScore >= 5 ? 'bg-[#ff9500]/20' : 'bg-[#34c759]/20'
-                }`}>
-                  <span className={`text-3xl font-bold ${scoreColor}`}>
-                    {analysis.overallRiskScore}
-                  </span>
-                  <span className="text-white/50 text-[10px]">Risk Score</span>
-                </div>
-              )}
-            </div>
+                {/* Risk Score Badge - only show for audits, not generated documents */}
+                {!isGeneratedDoc && (
+                  <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center ${
+                    analysis.overallRiskScore >= 7 ? 'bg-[#ff3b30]/20' :
+                    analysis.overallRiskScore >= 5 ? 'bg-[#ff9500]/20' : 'bg-[#34c759]/20'
+                  }`}>
+                    <span className={`text-3xl font-bold ${scoreColor}`}>
+                      {analysis.overallRiskScore}
+                    </span>
+                    <span className="text-white/50 text-[10px]">Risk Score</span>
+                  </div>
+                )}
+              </div>
           </motion.div>
 
           {/* Paywall for Free Users - Show after analysis completes */}
@@ -1577,8 +1577,8 @@ export default function ReportPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </Link>
-              </div>
-            </motion.div>
+            </div>
+          </motion.div>
           )}
 
           {/* Summary - only show for audits and paid users */}
@@ -1629,41 +1629,41 @@ export default function ReportPage() {
 
           {/* Tabs - only show relevant tabs (hide for free users) */}
           {!isFreeUser && (
-            <div className="flex gap-2 mb-6">
-              {[
-                // For generated documents, only show documents tab
-                ...(isGeneratedDoc 
-                  ? [{ id: 'documents' as const, label: 'Generated Documents' }]
-                  : [
-                      { id: 'risks' as const, label: 'Risks', count: analysis.risks?.length || 0 },
-                      { id: 'fixes' as const, label: 'Fixes' },
-                      { id: 'plan' as const, label: '7-Day Plan' },
-                      ...(analysis.generatedDocuments ? [{ id: 'documents' as const, label: 'Generated Documents' }] : []),
-                    ]
-                ),
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
-                    activeTab === tab.id
-                      ? 'bg-[#0071e3] text-white'
-                      : 'bg-[#1d1d1f] text-white/60 hover:bg-white/10 border border-white/10'
-                  }`}
-                >
-                  {tab.label}
-                  {tab.count !== undefined && (
-                    <span className="ml-2 opacity-60">({tab.count})</span>
-                  )}
-                </button>
-              ))}
-            </div>
+          <div className="flex gap-2 mb-6">
+            {[
+              // For generated documents, only show documents tab
+              ...(isGeneratedDoc 
+                ? [{ id: 'documents' as const, label: 'Generated Documents' }]
+                : [
+                    { id: 'risks' as const, label: 'Risks', count: analysis.risks?.length || 0 },
+                    { id: 'fixes' as const, label: 'Fixes' },
+                    { id: 'plan' as const, label: '7-Day Plan' },
+                    ...(analysis.generatedDocuments ? [{ id: 'documents' as const, label: 'Generated Documents' }] : []),
+                  ]
+              ),
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-[#0071e3] text-white'
+                    : 'bg-[#1d1d1f] text-white/60 hover:bg-white/10 border border-white/10'
+                }`}
+              >
+                {tab.label}
+                {tab.count !== undefined && (
+                  <span className="ml-2 opacity-60">({tab.count})</span>
+                )}
+              </button>
+            ))}
+          </div>
           )}
 
           {/* Tab Content - Hide for free users */}
           {!isFreeUser && (
-            <AnimatePresence mode="wait">
-              {activeTab === 'risks' && (
+          <AnimatePresence mode="wait">
+            {activeTab === 'risks' && (
               <motion.div
                 key="risks"
                 initial={{ opacity: 0, y: 20 }}
@@ -1934,10 +1934,10 @@ export default function ReportPage() {
                             >
                               {generatingPdf ? 'Generating...' : 'Download PDF'}
                             </button>
-                          </div>
+                  </div>
                           <div className="bg-white rounded-xl p-6 max-h-[400px] overflow-y-auto shadow-inner">
                             <DocumentFormatter content={docContent as string} />
-                          </div>
+                </div>
                         </div>
                       ))}
                     </div>
@@ -1948,20 +1948,20 @@ export default function ReportPage() {
                         <DocumentFormatter content={analysis.generatedDocuments} />
                       </div>
                       <div className="flex gap-4 mt-6">
-                        <button
-                          onClick={() => {
-                            const blob = new Blob([analysis.generatedDocuments || ''], { type: 'text/plain' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `${report.fileName}_Compliance_Documents.txt`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                          }}
-                          className="px-6 py-3 bg-[#0071e3] text-white rounded-full font-semibold hover:bg-[#0077ed] transition-colors"
-                        >
-                          Download as Text
-                        </button>
+                  <button
+                    onClick={() => {
+                      const blob = new Blob([analysis.generatedDocuments || ''], { type: 'text/plain' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${report.fileName}_Compliance_Documents.txt`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="px-6 py-3 bg-[#0071e3] text-white rounded-full font-semibold hover:bg-[#0077ed] transition-colors"
+                  >
+                    Download as Text
+                  </button>
                       </div>
                     </>
                   )}

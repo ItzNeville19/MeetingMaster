@@ -35,7 +35,7 @@ export default function APIKeysPage() {
       if (res.ok) {
         const data = await res.json();
         setApiKey(data.apiKey);
-      }
+          }
     } catch (err) {
       console.error('Failed to fetch API key:', err);
     } finally {
@@ -50,7 +50,7 @@ export default function APIKeysPage() {
         method: 'POST',
       });
       if (res.ok) {
-        const data = await res.json();
+      const data = await res.json();
         setApiKey(data.apiKey);
       } else {
         alert('Failed to generate API key. Please try again.');
@@ -72,7 +72,7 @@ export default function APIKeysPage() {
         method: 'DELETE',
       });
       if (res.ok) {
-        setApiKey(null);
+      setApiKey(null);
       } else {
         alert('Failed to delete API key. Please try again.');
       }
@@ -177,12 +177,12 @@ export default function APIKeysPage() {
                 <div className="bg-white/5 rounded-xl p-4 border border-white/10">
                   <div className="flex items-center gap-3">
                     <code className="flex-1 text-white font-mono text-sm break-all">{apiKey}</code>
-                    <button
-                      onClick={copyToClipboard}
+                  <button
+                    onClick={copyToClipboard}
                       className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full text-sm font-medium transition-colors flex-shrink-0"
                     >
                       {copied ? 'Copied!' : 'Copy'}
-                    </button>
+                  </button>
                   </div>
                 </div>
                 <div className="bg-[#ff9500]/10 border border-[#ff9500]/20 rounded-xl p-4">
@@ -247,8 +247,8 @@ export default function APIKeysPage() {
                   <div className="text-white/80">
                     <div className="mb-1">Headers:</div>
                     <div className="ml-4 text-white/60">Authorization: Bearer {'{your-api-key}'}</div>
-                  </div>
-                </div>
+              </div>
+            </div>
               </div>
 
               {/* Get Report */}
@@ -261,7 +261,7 @@ export default function APIKeysPage() {
                     <div className="mb-1">Headers:</div>
                     <div className="ml-4 text-white/60">Authorization: Bearer {'{your-api-key}'}</div>
                   </div>
-                </div>
+              </div>
               </div>
             </div>
 

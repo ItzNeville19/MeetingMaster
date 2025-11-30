@@ -30,7 +30,7 @@ export default function ReportsPage() {
       fetchReports();
     }
   }, [isLoaded, user]);
-  
+
   // Refresh reports when page becomes visible (e.g., navigating back)
   useEffect(() => {
     const handleVisibilityChange = () => {

@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
           controller.close();
           return;
         }
-        
+
         // CRITICAL: Warn if multi-page PDF but only 1 page processed
         const wordCount = ocrResult.text.split(/\s+/).length;
         if (isPdf && ocrResult.pageCount && ocrResult.pageCount > 1) {

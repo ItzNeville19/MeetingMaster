@@ -158,7 +158,7 @@ async function extractTextFromPdf(pdfUrl: string, onProgress?: ProgressCallback)
         
         // CRITICAL: For multi-page PDFs, verify we actually got text from multiple pages
         // pdf-parse extracts ALL pages by default, but we need to verify
-        const wordCount = extractedText.split(/\s+/).length;
+          const wordCount = extractedText.split(/\s+/).length;
         const avgWordsPerPage = wordCount / pageCount;
         
         // For multi-page PDFs, we need at least 20 words per page on average
@@ -268,7 +268,7 @@ async function extractTextFromPdf(pdfUrl: string, onProgress?: ProgressCallback)
           allTexts.push(`\n\n--- PAGE ${pageNum} OF ${pagesToTry} (PROCESSING FAILED) ---\n\n`);
           
           // Continue with next page - NEVER stop early
-          continue;
+            continue;
         }
       }
       

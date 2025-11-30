@@ -14,8 +14,8 @@ interface AuditEvent {
   userName?: string;
   timestamp: string;
   details?: Record<string, any>;
-  reportId?: string;
-  fileName?: string;
+    reportId?: string;
+    fileName?: string;
 }
 
 export default function AuditTrailPage() {
@@ -56,12 +56,12 @@ export default function AuditTrailPage() {
           userId: user?.id || '',
           userName: user?.fullName || 'Unknown',
           timestamp: report.createdAt,
-          reportId: report.id,
-          fileName: report.fileName,
+                reportId: report.id,
+                fileName: report.fileName,
           details: {
-            riskScore: report.analysis?.overallRiskScore,
+                riskScore: report.analysis?.overallRiskScore,
             risksFound: report.analysis?.risks?.length || 0,
-          },
+              },
         }));
         
         // Sort by timestamp (newest first)
@@ -71,7 +71,7 @@ export default function AuditTrailPage() {
     } catch (err) {
       console.error('Failed to fetch audit trail:', err);
     } finally {
-      setLoading(false);
+          setLoading(false);
     }
   };
 
@@ -94,29 +94,29 @@ export default function AuditTrailPage() {
           </svg>
         );
       case 'report_download':
-        return (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      return (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-        );
+        </svg>
+      );
       case 'team_action':
-        return (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      return (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-        );
+        </svg>
+      );
       case 'api_call':
-        return (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      return (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
-          </svg>
-        );
+        </svg>
+      );
       default:
-        return (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        );
+    return (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    );
     }
   };
 
@@ -162,16 +162,16 @@ export default function AuditTrailPage() {
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
             <Link href="/dashboard" className="inline-flex items-center gap-2 text-[#0071e3] hover:text-[#0077ed] mb-6">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Dashboard
-            </Link>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Dashboard
+              </Link>
             <h1 className="text-[36px] font-semibold text-white mb-2">Compliance Audit Trail</h1>
             <p className="text-[17px] text-white/60">Complete history of all compliance actions for regulatory audits and due diligence</p>
           </motion.div>
 
-          {/* Filters */}
+            {/* Filters */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex flex-wrap gap-2 mb-8">
             {[
               { id: 'all', label: 'All Events' },
@@ -201,15 +201,15 @@ export default function AuditTrailPage() {
             </div>
           ) : filteredEvents.length === 0 ? (
             <div className="bg-[#1d1d1f] rounded-3xl border border-white/10 p-12 text-center">
-              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
               <p className="text-white/60">No audit events found</p>
               <p className="text-white/40 text-sm mt-2">Events will appear here as you use LifeØS</p>
             </div>
-          ) : (
+            ) : (
             <div className="space-y-3">
               {filteredEvents.map((event) => (
                 <motion.div
@@ -267,7 +267,7 @@ export default function AuditTrailPage() {
                           hour: 'numeric',
                           minute: '2-digit',
                         })}
-                      </p>
+                          </p>
                     </div>
                     {event.reportId && (
                       <Link

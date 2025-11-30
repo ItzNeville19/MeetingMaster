@@ -41,10 +41,10 @@ export async function GET(request: NextRequest) {
     if (!supabaseSuccess) {
       try {
         let firestoreReports: any[] = [];
-        if (process.env.FIREBASE_ADMIN_PROJECT_ID) {
+      if (process.env.FIREBASE_ADMIN_PROJECT_ID) {
           firestoreReports = await getUserReports(userId);
           console.log(`[GetReports] Retrieved ${firestoreReports.length} reports using Firestore Admin SDK (BACKUP 1)`);
-        } else {
+      } else {
           firestoreReports = await getReportsFromFirestore(userId);
           console.log(`[GetReports] Retrieved ${firestoreReports.length} reports using Firestore REST API (BACKUP 1)`);
         }
@@ -61,24 +61,24 @@ export async function GET(request: NextRequest) {
       } catch (firestoreError) {
         console.error('[GetReports] Firestore backup also failed:', firestoreError);
       }
-    }
-    
+      }
+      
     // Ensure all reports have required fields
-    reports = reports.map((r: any) => {
-      // Ensure createdAt is a string
-      if (r.createdAt && typeof r.createdAt === 'object' && r.createdAt.toISOString) {
-        r.createdAt = r.createdAt.toISOString();
-      } else if (r.createdAt && typeof r.createdAt !== 'string') {
-        r.createdAt = new Date(r.createdAt).toISOString();
-      }
-      // Ensure fileName exists
-      if (!r.fileName && r.id) {
-        r.fileName = `Report ${r.id.substring(0, 8)}`;
-      }
-      return r;
-    }).filter((r: any) => r && r.id); // Filter out any invalid reports
-    
-    console.log(`[GetReports] Processed ${reports.length} valid reports`);
+      reports = reports.map((r: any) => {
+        // Ensure createdAt is a string
+        if (r.createdAt && typeof r.createdAt === 'object' && r.createdAt.toISOString) {
+          r.createdAt = r.createdAt.toISOString();
+        } else if (r.createdAt && typeof r.createdAt !== 'string') {
+          r.createdAt = new Date(r.createdAt).toISOString();
+        }
+        // Ensure fileName exists
+        if (!r.fileName && r.id) {
+          r.fileName = `Report ${r.id.substring(0, 8)}`;
+        }
+        return r;
+      }).filter((r: any) => r && r.id); // Filter out any invalid reports
+      
+      console.log(`[GetReports] Processed ${reports.length} valid reports`);
 
     // Get subscription info from Clerk metadata
     const client = await clerkClient();

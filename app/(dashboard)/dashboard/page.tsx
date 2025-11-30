@@ -254,7 +254,7 @@ export default function DashboardPage() {
       checkPrivacyAgreement();
     }
   }, [isLoaded, user]);
-  
+
   // Refresh reports when returning to dashboard (ensures reports never disappear)
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -270,7 +270,7 @@ export default function DashboardPage() {
         fetchReports();
       }
     };
-    
+      
     // Refresh when page becomes visible (e.g., navigating back from report)
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
@@ -381,7 +381,7 @@ export default function DashboardPage() {
           reportMap.set(r.id, r);
         }
       });
-      
+        
       const mergedReports = Array.from(reportMap.values())
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
@@ -416,8 +416,8 @@ export default function DashboardPage() {
         if (localReports.length > 0) {
           console.log('[Dashboard] Using local storage reports as fallback');
           setReports(localReports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-        } else {
-          setReports([]);
+      } else {
+        setReports([]);
         }
       }
     } catch (error) {
@@ -427,7 +427,7 @@ export default function DashboardPage() {
         console.log('[Dashboard] Using local storage reports as fallback');
         setReports(localReports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
       } else {
-        setReports([]);
+      setReports([]);
       }
     } finally {
       setLoading(false);
@@ -528,9 +528,9 @@ export default function DashboardPage() {
     
     // If not found in Supabase, check localStorage and Clerk metadata as fallback
     if (!hasAgreed) {
-      const privacyAgreed = localStorage.getItem('privacyPolicyAgreed') === 'true';
-      const userMetadata = user?.publicMetadata as any;
-      const metadataAgreed = userMetadata?.privacyPolicyAgreed === true;
+    const privacyAgreed = localStorage.getItem('privacyPolicyAgreed') === 'true';
+    const userMetadata = user?.publicMetadata as any;
+    const metadataAgreed = userMetadata?.privacyPolicyAgreed === true;
       hasAgreed = privacyAgreed || metadataAgreed;
     }
     
@@ -658,12 +658,12 @@ export default function DashboardPage() {
                 currentEstimate = newEstimate;
               }
             }
-          }
-          
+              }
+              
           // ALWAYS count down by 1 second each interval (simple countdown)
-          if (currentEstimate > 0) {
-            currentEstimate = Math.max(0, currentEstimate - 1);
-            setEstimatedTimeRemaining(Math.ceil(currentEstimate));
+              if (currentEstimate > 0) {
+                currentEstimate = Math.max(0, currentEstimate - 1);
+                setEstimatedTimeRemaining(Math.ceil(currentEstimate));
           } else if (currentProgress >= 100) {
             setEstimatedTimeRemaining(0);
             if (countdownInterval) clearInterval(countdownInterval);
@@ -773,11 +773,11 @@ export default function DashboardPage() {
         await new Promise(resolve => setTimeout(resolve, 500));
         
         const reportData = {
-          id: data.reportId,
-          fileName: file.name,
-          fileSize: file.size,
-          analysis: data.analysis,
-          createdAt: new Date().toISOString(),
+            id: data.reportId,
+            fileName: file.name,
+            fileSize: file.size,
+            analysis: data.analysis,
+            createdAt: new Date().toISOString(),
         };
         
         // Save to local storage immediately

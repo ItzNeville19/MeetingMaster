@@ -404,7 +404,7 @@ Generate complete, ready-to-use compliance documents. Output ONLY the document t
         section.length < 100 && (section.toLowerCase().includes('section') || section.toLowerCase().includes('policy'))
       )
     );
-    
+
     // CRITICAL: If key information is missing, we MUST ask for more
     const missingKeyInfo = !businessInfo.businessName || 
                            !businessInfo.industry || 

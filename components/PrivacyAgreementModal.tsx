@@ -40,20 +40,20 @@ export default function PrivacyAgreementModal({ onAgree, onCancel, isBlocking = 
         
         // Save agreement and wait for response
         const saveRes = await fetch('/api/save-privacy-agreement', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              agreed: true,
-              date: agreementDate,
-              dontShowAgain: dontShowAgain,
-              userEmail: user.emailAddresses?.[0]?.emailAddress || user.primaryEmailAddressId,
-              userId: user.id,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agreed: true,
+            date: agreementDate,
+            dontShowAgain: dontShowAgain,
+            userEmail: user.emailAddresses?.[0]?.emailAddress || user.primaryEmailAddressId,
+            userId: user.id,
               agreementVersion: agreementVersion,
               ipAddress: ipAddress,
               userAgent: userAgent,
-            }),
-          });
-          
+          }),
+        });
+        
         if (!saveRes.ok) {
           console.error('Failed to save privacy agreement:', await saveRes.text());
         } else {
@@ -238,9 +238,9 @@ export default function PrivacyAgreementModal({ onAgree, onCancel, isBlocking = 
               <h3 className="text-lg font-semibold text-white mb-4">Privacy Policy</h3>
               <p className="text-[15px] leading-relaxed text-white/80 mb-3">
                 By using LifeØS, you agree to our{' '}
-                <Link href="/privacy" target="_blank" className="text-[#0071e3] hover:text-[#0077ed] underline">
-                  Privacy Policy
-                </Link>
+              <Link href="/privacy" target="_blank" className="text-[#0071e3] hover:text-[#0077ed] underline">
+                Privacy Policy
+              </Link>
                 {' '}which describes how we collect, use, store, and protect your information. We may use third-party services, AI providers, and cloud storage. Your data may be processed and stored by third parties.
               </p>
             </div>
@@ -279,12 +279,12 @@ export default function PrivacyAgreementModal({ onAgree, onCancel, isBlocking = 
 
           <div className="flex gap-4">
             {!isBlocking && (
-              <button
+            <button
                 onClick={handleCancel}
                 className="flex-1 px-6 py-3 bg-white/10 text-white rounded-full font-medium hover:bg-white/20 transition-colors text-[17px]"
-              >
-                Cancel
-              </button>
+            >
+              Cancel
+            </button>
             )}
             <button
               onClick={handleAgree}

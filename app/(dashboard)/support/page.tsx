@@ -50,20 +50,20 @@ export default function SupportPage() {
           <div className="space-y-4">
             {/* 24/7 Support (Pro) */}
             {has24_7 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
                 className="bg-gradient-to-br from-[#1d1d1f] to-[#2d2d2f] rounded-3xl border border-[#0071e3]/30 p-8"
-              >
+            >
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-[#0071e3]/20 rounded-xl flex items-center justify-center">
                     <svg className="w-6 h-6 text-[#0071e3]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold text-white">24/7 Priority Support</h2>
+                <h2 className="text-xl font-semibold text-white">24/7 Priority Support</h2>
                     <p className="text-white/60 text-sm">Available around the clock</p>
                   </div>
                 </div>
@@ -98,7 +98,7 @@ export default function SupportPage() {
                     <h2 className="text-xl font-semibold text-white">Priority Support</h2>
                     <p className="text-white/60 text-sm">Response within 4 hours</p>
                   </div>
-                </div>
+              </div>
                 <p className="text-white/80 mb-6">Skip the queue with priority support. Get responses within 4 hours during business hours.</p>
                 <a
                   href="mailto:neville@rayze.xyz?subject=[LifeØS Priority] Support Request&body=Issue Description:%0D%0A%0D%0A%0D%0AExpected Response Time: 4 hours"
@@ -106,8 +106,8 @@ export default function SupportPage() {
                 >
                   Contact Priority Support
                 </a>
-              </motion.div>
-            )}
+            </motion.div>
+          )}
 
             {/* Email Support (All) */}
             <motion.div
@@ -121,11 +121,11 @@ export default function SupportPage() {
                   <svg className="w-6 h-6 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                   </svg>
-                </div>
-                <div>
+                  </div>
+                    <div>
                   <h2 className="text-xl font-semibold text-white">Email Support</h2>
                   <p className="text-white/60 text-sm">Available to all users</p>
-                </div>
+                    </div>
               </div>
               <p className="text-white/80 mb-6">Get help via email. Our team typically responds within 24 hours.</p>
               <a

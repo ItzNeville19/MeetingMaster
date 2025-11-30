@@ -113,10 +113,10 @@ export default function AccountManagerPage() {
           </motion.div>
 
           {/* Contact Options */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
             className="grid md:grid-cols-2 gap-4"
           >
             <a
@@ -126,7 +126,7 @@ export default function AccountManagerPage() {
               <div className="w-12 h-12 bg-[#0071e3]/20 rounded-xl flex items-center justify-center mb-4">
                 <svg className="w-6 h-6 text-[#0071e3]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                </svg>
+                  </svg>
               </div>
               <h3 className="text-white font-semibold mb-2">Schedule a Call</h3>
               <p className="text-white/60 text-sm">Book a strategy session to discuss your compliance roadmap</p>
@@ -139,20 +139,20 @@ export default function AccountManagerPage() {
               <div className="w-12 h-12 bg-[#34c759]/20 rounded-xl flex items-center justify-center mb-4">
                 <svg className="w-6 h-6 text-[#34c759]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337L5 20l1.318-3.975A9.72 9.72 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
-                </svg>
+                  </svg>
               </div>
               <h3 className="text-white font-semibold mb-2">Quick Question</h3>
               <p className="text-white/60 text-sm">Send a message for quick answers and guidance</p>
             </a>
-          </motion.div>
+            </motion.div>
 
           {/* Next Steps */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
             className="mt-8 bg-gradient-to-br from-[#0071e3]/20 to-[#5856d6]/20 rounded-3xl border border-[#0071e3]/30 p-8"
-          >
+            >
             <h3 className="text-white font-semibold mb-4">What to Expect</h3>
             <ul className="space-y-2 text-white/80 text-sm">
               <li className="flex items-start gap-2">
@@ -172,7 +172,7 @@ export default function AccountManagerPage() {
                 <span>Custom integration support for your existing workflows</span>
               </li>
             </ul>
-          </motion.div>
+            </motion.div>
         </div>
       </main>
     </div>
