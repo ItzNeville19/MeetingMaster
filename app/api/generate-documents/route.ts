@@ -93,7 +93,7 @@ BASIC INFORMATION:
 - Primary Location/State: ${businessInfo.state}
 - Year Established: ${businessInfo.yearEstablished || 'Not specified'}
 - Website: ${businessInfo.websiteUrl || 'Not provided'}
-${websiteInfo && websiteInfo.content ? `\n\nWEBSITE ANALYSIS:\n${websiteInfo.content}\n\nUse this information to enhance the documents, but ONLY use factual information from the website. Do NOT make up details.` : websiteInfo ? `\n\nNOTE: Business website is ${websiteInfo.url} - use this to inform your understanding of the business, but do NOT make up specific details not provided.` : ''}
+${websiteInfo ? `\n\nNOTE: Business website is ${websiteInfo.url} - use this to inform your understanding of the business, but do NOT make up specific details not provided.` : ''}
 
 WORK ENVIRONMENT:
 - Work Environments: ${businessInfo.workEnvironment.join(', ') || 'Not specified'}
@@ -219,7 +219,7 @@ Generate documents in this EXACT format with clear separators:
 
 ========== COMPLIANCE POLICIES ==========
    Create detailed policies for:
-   ${businessInfo.complianceConcerns.map(c => `   - ${c}`).join('\n')}
+   ${businessInfo.complianceConcerns.map((c: string) => `   - ${c}`).join('\n')}
    ${businessInfo.hasHIPAARequirements ? '   - HIPAA Privacy & Security (Full compliance required)' : ''}
    ${businessInfo.hasDataPrivacyConcerns ? '   - Data Privacy & Protection' : ''}
    ${businessInfo.specificPoliciesNeeded ? `   - ${businessInfo.specificPoliciesNeeded}` : ''}

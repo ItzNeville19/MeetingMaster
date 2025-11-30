@@ -1061,7 +1061,7 @@ export default function ReportPage() {
         doc.setTextColor(29, 29, 31);
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        const riskTitle = risk.title || risk.issue || `Risk ${risk.id || 'Unknown'}`;
+          const riskTitle = risk.title || `Risk ${risk.id || 'Unknown'}`;
         doc.text(riskTitle, margin + 8, y);
         
         doc.setFontSize(8);
@@ -1166,30 +1166,38 @@ export default function ReportPage() {
           }
           y += 5;
         }
-      } else if (actionPlan && typeof actionPlan === 'object' && (actionPlan.day1 || actionPlan.day2_3 || actionPlan.day4_5 || actionPlan.day6_7)) {
+      } else if (actionPlan && typeof actionPlan === 'object' && !Array.isArray(actionPlan)) {
         // Old format: object with day1, day2_3, etc.
-        const days = [
-          { label: 'Day 1', value: actionPlan.day1 },
-          { label: 'Days 2-3', value: actionPlan.day2_3 },
-          { label: 'Days 4-5', value: actionPlan.day4_5 },
-          { label: 'Days 6-7', value: actionPlan.day6_7 },
-        ].filter(day => day.value);
+        const oldPlan = actionPlan as { day1?: string; day2_3?: string; day4_5?: string; day6_7?: string };
+        if (oldPlan.day1 || oldPlan.day2_3 || oldPlan.day4_5 || oldPlan.day6_7) {
+          const days = [
+            { label: 'Day 1', value: oldPlan.day1 },
+            { label: 'Days 2-3', value: oldPlan.day2_3 },
+            { label: 'Days 4-5', value: oldPlan.day4_5 },
+            { label: 'Days 6-7', value: oldPlan.day6_7 },
+          ].filter(day => day.value);
 
-        if (days.length > 0) {
-          for (const day of days) {
-            if (y > 270) {
-              doc.addPage();
-              y = 20;
+          if (days.length > 0) {
+            for (const day of days) {
+              if (y > 270) {
+                doc.addPage();
+                y = 20;
+              }
+              doc.setFontSize(10);
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(0, 113, 227);
+              doc.text(day.label, margin, y);
+              
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(100, 100, 100);
+              y = addWrappedText(day.value || '', margin + 25, y, contentWidth - 25, 5);
+              y += 5;
             }
+          } else {
             doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(0, 113, 227);
-            doc.text(day.label, margin, y);
-            
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(100, 100, 100);
-            y = addWrappedText(day.value || '', margin + 25, y, contentWidth - 25, 5);
-            y += 5;
+            y = addWrappedText('No action plan available.', margin, y, contentWidth, 6);
           }
         } else {
           doc.setFontSize(10);

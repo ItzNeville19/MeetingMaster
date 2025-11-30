@@ -4,7 +4,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 
 let adminApp: App;
 
-function getAdminApp(): App {
+export function getAdminApp(): App {
   if (getApps().length === 0) {
     // Only initialize if we have the credentials (optional - we use REST API now)
     const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;

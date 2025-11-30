@@ -848,7 +848,7 @@ export default function DashboardPage() {
           }));
           // Add the new report to the top
           const updatedRecentFiles = [
-            { id: data.reportId, fileName: fileName || 'Untitled Document', createdAt: new Date().toISOString() },
+            { id: data.reportId, fileName: file?.name || data.fileName || 'Untitled Document', createdAt: new Date().toISOString() },
             ...recentFiles.filter(f => f.id !== data.reportId),
           ].slice(0, 10);
           
