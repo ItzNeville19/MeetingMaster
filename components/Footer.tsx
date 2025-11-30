@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="border-t border-[#d2d2d7] bg-gradient-to-b from-[#f5f5f7] to-white">
       <div className="max-w-[980px] mx-auto px-6 py-12">
         {/* Top links */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
           <div>
             <h4 className="text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-4">Product</h4>
             <ul className="space-y-3">
@@ -18,7 +18,14 @@ export default function Footer() {
             <h4 className="text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-4">Company</h4>
             <ul className="space-y-3">
               <li><Link href="/about" className="text-sm text-[#424245] hover:text-[#1d1d1f]">About</Link></li>
-              <li><Link href="/contact" className="text-sm text-[#424245] hover:text-[#1d1d1f]">Contact</Link></li>
+              <li><Link href="/careers" className="text-sm text-[#424245] hover:text-[#1d1d1f]">Careers</Link></li>
+              <li><Link href="/news" className="text-sm text-[#424245] hover:text-[#1d1d1f]">News</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-4">Contact</h4>
+            <ul className="space-y-3">
+              <li><Link href="/contact" className="text-sm text-[#424245] hover:text-[#1d1d1f]">Contact Us</Link></li>
               <li><a href="mailto:neville@rayze.xyz" className="text-sm text-[#424245] hover:text-[#1d1d1f]">neville@rayze.xyz</a></li>
             </ul>
           </div>
@@ -50,6 +57,21 @@ export default function Footer() {
                   className="text-sm text-[#424245] hover:text-[#1d1d1f]"
                 >
                   LinkedIn
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-xs font-semibold text-[#1d1d1f] uppercase tracking-wider mb-4">Partners</h4>
+            <ul className="space-y-3">
+              <li>
+                <a 
+                  href="https://rayze.xyz" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-sm font-semibold text-[#0071e3] hover:text-[#0077ed] transition-colors"
+                >
+                  Rayze.xyz
                 </a>
               </li>
             </ul>

@@ -24,16 +24,35 @@ export default function NavBar() {
   const { user, isLoaded } = useUser();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Only set mounted after client-side hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Get subscription tier
-  const subscription = user?.publicMetadata?.subscription as { tier?: string } | undefined;
+  const subscription = user?.publicMetadata?.subscription as { 
+    tier?: string; 
+    isOwner?: boolean; 
+    isDev?: boolean;
+  } | undefined;
   const tier = subscription?.tier || 'free';
-  const badge = tierBadges[tier];
+  const isOwner = subscription?.isOwner || subscription?.isDev;
+  
+  // Show special badge for owner/dev accounts
+  const badge = isOwner 
+    ? { label: 'DEV', color: 'bg-gradient-to-r from-[#00d4ff] to-[#0071e3] text-white' }
+    : tierBadges[tier];
 
   // Determine if we're on a dark page
-  const isDarkPage = ['/dashboard', '/upload', '/settings', '/team', '/benefits', '/reports', '/api-keys', '/sla', '/branding', '/insights'].some(
-    path => pathname.startsWith(path)
-  );
+  // Default to false during SSR to avoid hydration mismatch, then update on client
+  const [isDarkPage, setIsDarkPage] = useState(false);
+  
+  useEffect(() => {
+    const darkPaths = ['/dashboard', '/upload', '/settings', '/team', '/benefits', '/reports', '/api-keys', '/sla', '/branding', '/insights', '/audit-trail', '/account-manager', '/support'];
+    setIsDarkPage(darkPaths.some(path => pathname?.startsWith(path)));
+  }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -51,10 +70,13 @@ export default function NavBar() {
     ? 'bg-[#1d1d1f]/90 backdrop-blur-xl border-b border-white/10' 
     : 'bg-white/80 backdrop-blur-xl border-b border-black/5';
 
+  // Force white background for news page to avoid white-on-white text - always visible
+  const navBgClass = pathname?.startsWith('/news') 
+    ? 'bg-white border-b border-black/5' 
+    : (scrolled ? bgScrolled : 'bg-transparent');
+
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled ? bgScrolled : 'bg-transparent'
-    }`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${navBgClass}`}>
       <div className="max-w-[980px] mx-auto px-6">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
@@ -62,25 +84,22 @@ export default function NavBar() {
             <Link href="/" className={`text-xl font-semibold ${textColor}`}>
               LifeØS
             </Link>
-            <a 
-              href="https://rayze.xyz" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className={`hidden sm:inline-flex items-center gap-1 text-[10px] ${textMuted} hover:${textColor} transition-colors border border-current/20 px-2 py-0.5 rounded-full`}
-            >
-              rayze.xyz
-              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-              </svg>
-            </a>
           </div>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
             <Link
+              href="/about"
+              className={`text-sm transition-colors ${
+                mounted && pathname === '/about' ? textColor : `${textMuted} hover:${textColor}`
+              }`}
+            >
+              About
+            </Link>
+            <Link
               href="/pricing"
               className={`text-sm transition-colors ${
-                pathname === '/pricing' ? textColor : `${textMuted} hover:${textColor}`
+                mounted && pathname === '/pricing' ? textColor : `${textMuted} hover:${textColor}`
               }`}
             >
               Pricing
@@ -89,7 +108,7 @@ export default function NavBar() {
               <Link
                 href="/dashboard"
                 className={`text-sm transition-colors ${
-                  pathname === '/dashboard' ? textColor : `${textMuted} hover:${textColor}`
+                mounted && pathname === '/dashboard' ? textColor : `${textMuted} hover:${textColor}`
                 }`}
               >
                 Dashboard
@@ -97,7 +116,7 @@ export default function NavBar() {
               <Link
                 href="/benefits"
                 className={`text-sm transition-colors ${
-                  pathname === '/benefits' ? textColor : `${textMuted} hover:${textColor}`
+                mounted && pathname === '/benefits' ? textColor : `${textMuted} hover:${textColor}`
                 }`}
               >
                 Benefits
@@ -162,6 +181,7 @@ export default function NavBar() {
             ? 'bg-[#1d1d1f] border-t border-white/10' 
             : 'bg-white border-t border-black/5'
         }`}>
+          <Link href="/about" className={`block ${textColor}`}>About</Link>
           <Link href="/pricing" className={`block ${textColor}`}>Pricing</Link>
           <SignedIn>
             {/* Mobile Badge */}

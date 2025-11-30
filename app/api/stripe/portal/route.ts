@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createPortalSession } from '@/lib/stripe';
-import { adminDb } from '@/lib/firebase-admin';
+import { getSubscriptionFromFirestore } from '@/lib/firestore-rest';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,17 +14,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Get customer ID from subscription record
-    const db = adminDb();
-    const subscriptionDoc = await db.collection('subscriptions').doc(userId).get();
+    const subscriptionData = await getSubscriptionFromFirestore(userId);
     
-    if (!subscriptionDoc.exists) {
+    if (!subscriptionData) {
       return NextResponse.json(
         { error: 'No subscription found' },
         { status: 404 }
       );
     }
 
-    const subscriptionData = subscriptionDoc.data();
     const customerId = subscriptionData?.stripeCustomerId;
 
     if (!customerId) {

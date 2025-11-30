@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { getUserReports } from '@/lib/firebase-admin';
+import { getReportsFromFirestore } from '@/lib/firestore-rest';
 
 // GET all reports for current user
 export async function GET(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const reports = await getUserReports(userId);
+    const reports = await getReportsFromFirestore(userId);
 
     return NextResponse.json({
       success: true,

@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import NavBar from '@/components/NavBar';
 import { useUser } from '@clerk/nextjs';
+import { useOwnerUpgrade } from '@/lib/useOwnerUpgrade';
+import PrivacyAgreementModal from '@/components/PrivacyAgreementModal';
 
 interface Report {
   id: string;
@@ -21,6 +23,40 @@ interface Report {
 
 type UploadStatus = 'idle' | 'uploading' | 'analyzing' | 'success' | 'error';
 
+// Helper function to interpolate between colors smoothly
+function interpolateColor(progress: number): string {
+  // Progress from 0-100, map to smooth color transition
+  // Blue (#0071e3) -> Cyan (#00c7ff) -> Green (#34c759)
+  const p = Math.max(0, Math.min(100, progress)) / 100;
+  
+  // RGB values for smooth transition
+  // Start: #0071e3 (0, 113, 227) - Blue
+  // Mid: #00c7ff (0, 199, 255) - Cyan
+  // End: #34c759 (52, 199, 89) - Green
+  
+  let r, g, b;
+  if (p < 0.4) {
+    // Blue to Cyan (0-40%)
+    const t = p / 0.4;
+    r = 0;
+    g = Math.round(113 + t * (199 - 113));
+    b = Math.round(227 + t * (255 - 227));
+  } else if (p < 0.7) {
+    // Cyan (40-70%) - stay at cyan longer
+    r = 0;
+    g = 199;
+    b = 255;
+  } else {
+    // Cyan to Green (70-100%)
+    const t = (p - 0.7) / 0.3;
+    r = Math.round(0 + t * 52);
+    g = Math.round(199 + t * (199 - 199));
+    b = Math.round(255 + t * (89 - 255));
+  }
+  
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
@@ -32,39 +68,390 @@ export default function DashboardPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [currentFileName, setCurrentFileName] = useState<string | null>(null);
+  const [progressMessage, setProgressMessage] = useState('');
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number | null>(null);
+  const [startTime, setStartTime] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showAlertNotification, setShowAlertNotification] = useState(false);
   const [alertInfo, setAlertInfo] = useState<{ fileName: string; riskScore: number } | null>(null);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+
+  // Auto-upgrade owner account
+  useOwnerUpgrade();
+
+  // Check if user is owner/dev from metadata
+  const userSubscription = user?.publicMetadata?.subscription as {
+    tier?: string;
+    isOwner?: boolean;
+    isDev?: boolean;
+    uploadsUsed?: number;
+  } | undefined;
+  
+  const userEmail = user?.emailAddresses?.find(e => e.id === user.primaryEmailAddressId)?.emailAddress || 
+                   user?.emailAddresses?.[0]?.emailAddress;
+  const isOwnerEmail = userEmail?.toLowerCase() === 'neville@rayze.xyz';
+  const isOwner = isOwnerEmail || userSubscription?.isOwner || userSubscription?.isDev;
 
   const tierLimits: Record<string, number> = {
     free: 1, starter: 5, growth: 20, pro: Infinity,
   };
-  const maxUploads = tierLimits[subscription.tier] || 1;
+  
+  // If owner, force pro tier with unlimited
+  const effectiveTier = isOwner ? 'pro' : (subscription.tier || 'free');
+  const maxUploads = isOwner ? Infinity : (tierLimits[effectiveTier] || 1);
   const uploadsUsed = subscription.uploadsUsed || 0;
   const canUpload = maxUploads === Infinity || uploadsUsed < maxUploads;
+  
+  // Display logic for analyses counter - fix the display
+  const getAnalysesDisplay = () => {
+    if (isOwner || maxUploads === Infinity) {
+      // For owner/dev or unlimited plans, show count with infinity
+      return uploadsUsed > 0 ? `${uploadsUsed}/∞` : '0/∞';
+    } else {
+      // For limited tiers, show actual limit
+      return `${uploadsUsed}/${maxUploads}`;
+    }
+  };
 
-  // Load reports from Clerk on mount
+  // Immediately update subscription if owner
+  useEffect(() => {
+    if (isLoaded && user && isOwnerEmail) {
+      setSubscription(prev => ({
+        ...prev,
+        tier: 'pro',
+        isOwner: true,
+        isDev: true,
+        uploadsLimit: -1,
+      }));
+    }
+  }, [isLoaded, user, isOwnerEmail]);
+
+  // Load reports, user profile, and restore analysis state on mount
   useEffect(() => {
     if (isLoaded && user) {
+      // FIRST: Load reports from localStorage immediately (no waiting for API)
+      const localReportsKey = `lifeos_reports_${user.id}`;
+      try {
+        const localData = localStorage.getItem(localReportsKey);
+        if (localData) {
+          const localReports = JSON.parse(localData);
+          setReports(localReports);
+          setLoading(false);
+          console.log('[Dashboard] Loaded', localReports.length, 'reports from localStorage immediately');
+        }
+      } catch (e) {
+        console.warn('[Dashboard] Error loading local reports:', e);
+      }
+      
+      // Load user profile from Supabase (for cross-device sync)
+      const loadUserProfile = async () => {
+        try {
+          const res = await fetch('/api/user-profile');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.profile) {
+              console.log('[Dashboard] ✅ Loaded user profile from Supabase (cross-device sync)');
+              // Profile data can be used for preferences, settings, etc.
+            }
+          }
+        } catch (e) {
+          console.warn('[Dashboard] Error loading user profile:', e);
+        }
+      };
+      loadUserProfile();
+      
+      // THEN: Fetch fresh reports from API (will update if different)
       fetchReports();
+      
+      // Check for ongoing analysis that needs to be resumed
+      try {
+        const ongoingAnalysisKey = `lifeos_ongoing_analysis_${user.id}`;
+        const ongoingData = sessionStorage.getItem(ongoingAnalysisKey);
+        if (ongoingData) {
+          const analysisState = JSON.parse(ongoingData);
+          console.log('[Dashboard] Found ongoing analysis, restoring state...', analysisState);
+          
+          // Restore analysis state
+          if (analysisState.status === 'uploading' || analysisState.status === 'analyzing') {
+            setUploadStatus(analysisState.status);
+            setUploadProgress(analysisState.progress || 0);
+            setProgressMessage(analysisState.message || 'Resuming analysis...');
+            setCurrentFileName(analysisState.fileName);
+            setEstimatedTimeRemaining(analysisState.estimatedTimeRemaining);
+            
+            // Note: We can't resume the actual stream, but we can show the state
+            // The analysis will complete on the server side
+            console.log('[Dashboard] Analysis state restored. Analysis continues on server.');
+          }
+        }
+      } catch (e) {
+        console.warn('[Dashboard] Error restoring analysis state:', e);
+      }
+      
+      // Check privacy agreement status from Supabase FIRST, then localStorage/Clerk
+      const checkPrivacyAgreement = async () => {
+        try {
+          // Check Supabase for agreement status
+          const agreementRes = await fetch('/api/get-privacy-agreements');
+          if (agreementRes.ok) {
+            const agreementData = await agreementRes.json();
+            const hasAgreedInSupabase = agreementData.agreements && agreementData.agreements.length > 0 && 
+              agreementData.agreements.some((a: any) => a.agreed === true);
+            
+            if (hasAgreedInSupabase) {
+              // Check if "don't show again" was checked and if it's been a year
+              const latestAgreement = agreementData.agreements[0];
+              if (latestAgreement.dontShowAgain) {
+                const agreementDate = new Date(latestAgreement.agreementDate);
+                const oneYearAgo = new Date();
+                oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+                
+                // If agreed more than a year ago with "don't show again", show again
+                if (agreementDate < oneYearAgo) {
+                  console.log('[Dashboard] Privacy agreement is over 1 year old, showing again...');
+                  setShowPrivacyModal(true);
+                  return;
+                }
+              }
+              
+              // User has agreed in Supabase - update localStorage
+              localStorage.setItem('privacyPolicyAgreed', 'true');
+              localStorage.setItem('privacyPolicyAgreedDate', latestAgreement.agreementDate);
+              return; // Don't show modal
+            }
+          }
+        } catch (e) {
+          console.warn('[Dashboard] Error checking Supabase privacy agreement:', e);
+        }
+        
+        // Fallback: Check localStorage and Clerk metadata
+        const hasAgreed = localStorage.getItem('privacyPolicyAgreed') === 'true';
+        const metadata = user.publicMetadata as { privacyPolicyAgreed?: boolean };
+        
+        // Check if agreement is old (over 1 year)
+        const agreementDateStr = localStorage.getItem('privacyPolicyAgreedDate');
+        if (agreementDateStr) {
+          const agreementDate = new Date(agreementDateStr);
+          const oneYearAgo = new Date();
+          oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+          
+          if (agreementDate < oneYearAgo) {
+            console.log('[Dashboard] Privacy agreement is over 1 year old, showing again...');
+            setShowPrivacyModal(true);
+            return;
+          }
+        }
+        
+        // Show modal if not agreed
+        if (!hasAgreed && !metadata.privacyPolicyAgreed) {
+          console.log('[Dashboard] User has not agreed to privacy policy, showing modal...');
+          setShowPrivacyModal(true);
+        }
+      };
+      
+      checkPrivacyAgreement();
     }
+  }, [isLoaded, user]);
+  
+  // Refresh reports when returning to dashboard (ensures reports never disappear)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isLoaded && user) {
+        console.log('[Dashboard] Page visible, refreshing reports to ensure they never disappear...');
+        fetchReports();
+      }
+    };
+    
+    const handleFocus = () => {
+      if (isLoaded && user) {
+        console.log('[Dashboard] Window focused, refreshing reports...');
+        fetchReports();
+      }
+    };
+    
+    // Refresh when page becomes visible (e.g., navigating back from report)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [isLoaded, user]);
 
   const fetchReports = async () => {
+    // Declare localReports outside try block so it's accessible in catch
+    const localReportsKey = `lifeos_reports_${user?.id}`;
+    let localReports: Report[] = [];
+    
     try {
-      const res = await fetch('/api/get-reports');
+      console.log('[Dashboard] Fetching reports for user:', user?.id);
+      
+      // First, load from local storage IMMEDIATELY (so reports show instantly, even before API call)
+      try {
+        const localData = localStorage.getItem(localReportsKey);
+        if (localData) {
+          localReports = JSON.parse(localData);
+          // Set reports immediately so they show right away
+          setReports(localReports);
+          setLoading(false);
+          console.log('[Dashboard] Loaded', localReports.length, 'reports from local storage (displayed immediately)');
+        }
+      } catch (e) {
+        console.warn('[Dashboard] Error loading local reports:', e);
+      }
+      
+      // Then fetch from API (Supabase primary, Firestore backup)
+      const res = await fetch('/api/get-reports', {
+        cache: 'no-store', // Always fetch fresh data
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      });
+      console.log('[Dashboard] Response status:', res.status);
+      
+      // If API fails, still show local reports (they won't disappear)
+      if (!res.ok) {
+        console.warn('[Dashboard] API call failed, using local storage reports');
+        if (localReports.length > 0) {
+          setReports(localReports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+          setLoading(false);
+          return; // Don't continue - use local reports
+        }
+      }
+      
+      let firestoreReports: Report[] = [];
+      let subscriptionData: any = null;
+      
       if (res.ok) {
+        // Read response body ONCE and store it
         const data = await res.json();
-        setReports(data.reports || []);
-        setSubscription(data.subscription || { tier: 'free', uploadsUsed: 0 });
+        console.log('[Dashboard] Received data:', { 
+          reportsCount: data.reports?.length || 0, 
+          reports: data.reports,
+          subscription: data.subscription 
+        });
+        
+        // Store subscription data
+        subscriptionData = data.subscription;
+        
+        // Ensure reports is an array
+        firestoreReports = Array.isArray(data.reports) ? data.reports : [];
+        
+        // Filter out any invalid reports and ensure they have required fields
+        firestoreReports = firestoreReports.filter((r: any) => {
+          const isValid = r && r.id && (r.fileName || r.id);
+          if (!isValid) {
+            console.warn('[Dashboard] Invalid report filtered out:', r);
+          }
+          return isValid;
+        });
+        
+        // Save to local storage as backup
+        try {
+          localStorage.setItem(localReportsKey, JSON.stringify(firestoreReports));
+          console.log('[Dashboard] Saved', firestoreReports.length, 'reports to local storage');
+        } catch (e) {
+          console.warn('[Dashboard] Error saving to local storage:', e);
+        }
+      } else {
+        // Try to read error response (but don't fail if it fails)
+        try {
+          const errorData = await res.json();
+          console.error('[Dashboard] Failed to fetch reports:', res.status, errorData);
+        } catch (e) {
+          console.error('[Dashboard] Failed to fetch reports:', res.status);
+        }
+      }
+      
+      // Merge Firestore and local storage reports (Firestore takes priority, but include any local-only reports)
+      const reportMap = new Map<string, Report>();
+      
+      // Add Firestore reports first (they're the source of truth)
+      firestoreReports.forEach(r => {
+        if (r.id) reportMap.set(r.id, r);
+      });
+      
+      // Add local reports that aren't in Firestore (backup/offline reports)
+      localReports.forEach(r => {
+        if (r.id && !reportMap.has(r.id)) {
+          console.log('[Dashboard] Adding local-only report:', r.id);
+          reportMap.set(r.id, r);
+        }
+      });
+      
+      const mergedReports = Array.from(reportMap.values())
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      console.log('[Dashboard] Merged reports:', mergedReports.length, 'total (', firestoreReports.length, 'from API,', localReports.length, 'from local)');
+      setReports(mergedReports);
+      
+      // Handle subscription data
+      if (subscriptionData) {
+        const sub = subscriptionData || { tier: 'free', uploadsUsed: 0 };
+        
+        // Ensure uploadsUsed is a number (not undefined or null)
+        if (typeof sub.uploadsUsed !== 'number' || isNaN(sub.uploadsUsed)) {
+          sub.uploadsUsed = 0;
+        }
+        
+        // If owner, override with pro tier and dev flags
+        if (isOwnerEmail) {
+          sub.tier = 'pro';
+          sub.isOwner = true;
+          sub.isDev = true;
+        } else if (userSubscription) {
+          // Merge user metadata
+          sub.isOwner = userSubscription.isOwner;
+          sub.isDev = userSubscription.isDev;
+          if (userSubscription.tier) sub.tier = userSubscription.tier;
+        }
+        
+        console.log('[Dashboard] Setting subscription:', sub);
+        setSubscription(sub);
+      } else if (res.ok === false) {
+        // On error, still use local storage reports
+        if (localReports.length > 0) {
+          console.log('[Dashboard] Using local storage reports as fallback');
+          setReports(localReports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        } else {
+          setReports([]);
+        }
       }
     } catch (error) {
-      console.error('Failed to fetch reports:', error);
+      console.error('[Dashboard] Error fetching reports:', error);
+      // On error, try to use local storage reports
+      if (localReports.length > 0) {
+        console.log('[Dashboard] Using local storage reports as fallback');
+        setReports(localReports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      } else {
+        setReports([]);
+      }
     } finally {
       setLoading(false);
     }
   };
+  
+  // Helper function to save report to local storage
+  const saveReportToLocal = useCallback((report: Report) => {
+    if (!user?.id) return;
+    try {
+      const localReportsKey = `lifeos_reports_${user.id}`;
+      const existing = localStorage.getItem(localReportsKey);
+      const reports: Report[] = existing ? JSON.parse(existing) : [];
+      
+      // Remove if exists, then add at beginning
+      const filtered = reports.filter(r => r.id !== report.id);
+      const updated = [report, ...filtered].slice(0, 100); // Keep max 100 reports
+      
+      localStorage.setItem(localReportsKey, JSON.stringify(updated));
+      console.log('[Dashboard] Saved report to local storage:', report.id);
+    } catch (e) {
+      console.warn('[Dashboard] Error saving to local storage:', e);
+    }
+  }, [user?.id]);
 
   // Calculate stats
   const stats = {
@@ -102,122 +489,429 @@ export default function DashboardPage() {
     }
   }, [canUpload]);
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      if (validateFile(file)) {
-        processFile(file);
-      }
-    }
-  }, [canUpload]);
-
-  const validateFile = (file: File): boolean => {
-    const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
+  const validateFile = useCallback((file: File): boolean => {
+    console.log('Validating file:', file.name, file.type, file.size);
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif', 'application/pdf'];
     if (!allowedTypes.includes(file.type)) {
-      setUploadError('Please upload a PDF or image file');
+      setUploadError(`Please upload an image file (PNG, JPG, WEBP, GIF) or PDF. File type "${file.type}" is not supported.`);
       return false;
     }
     if (file.size > 10 * 1024 * 1024) {
       setUploadError('File size must be under 10MB');
       return false;
     }
+    setUploadError(null);
     return true;
-  };
+  }, []);
 
-  const processFile = async (file: File) => {
+  const processFile = useCallback(async (file: File) => {
+    // CRITICAL: Check privacy agreement from Supabase FIRST before allowing upload
+    let hasAgreed = false;
+    
+    try {
+      const agreementRes = await fetch('/api/get-privacy-agreements');
+      if (agreementRes.ok) {
+        const agreementData = await agreementRes.json();
+        hasAgreed = agreementData.agreements && agreementData.agreements.length > 0 && 
+          agreementData.agreements.some((a: any) => a.agreed === true);
+        
+        if (hasAgreed) {
+          // User has agreed - update localStorage for quick access
+          const latestAgreement = agreementData.agreements[0];
+          localStorage.setItem('privacyPolicyAgreed', 'true');
+          localStorage.setItem('privacyPolicyAgreedDate', latestAgreement.agreementDate);
+        }
+      }
+    } catch (e) {
+      console.warn('[Dashboard] Error checking Supabase privacy agreement:', e);
+    }
+    
+    // If not found in Supabase, check localStorage and Clerk metadata as fallback
+    if (!hasAgreed) {
+      const privacyAgreed = localStorage.getItem('privacyPolicyAgreed') === 'true';
+      const userMetadata = user?.publicMetadata as any;
+      const metadataAgreed = userMetadata?.privacyPolicyAgreed === true;
+      hasAgreed = privacyAgreed || metadataAgreed;
+    }
+    
+    if (!hasAgreed) {
+      // User has NOT agreed - BLOCK upload and show modal
+      console.log('[Dashboard] User has not agreed to privacy policy, blocking upload...');
+      setPendingFile(file);
+      setShowPrivacyModal(true);
+      return;
+    }
+    
     if (!canUpload) {
       setUploadError(`You've reached your ${maxUploads} analysis limit this month.`);
       return;
     }
 
-    setUploadStatus('uploading');
-    setUploadProgress(0);
-    setUploadError(null);
-    setCurrentFileName(file.name);
-    setSelectedFile(file);
+    // Save analysis state to sessionStorage so it persists across refreshes
+    const ongoingAnalysisKey = `lifeos_ongoing_analysis_${user?.id}`;
+    const saveAnalysisState = (status: UploadStatus, progress: number, message: string, estimatedTime?: number | null) => {
+      if (!user?.id) return;
+      try {
+        sessionStorage.setItem(ongoingAnalysisKey, JSON.stringify({
+          status,
+          progress,
+          message,
+          fileName: file.name,
+          estimatedTimeRemaining: estimatedTime,
+          startedAt: Date.now(),
+        }));
+      } catch (e) {
+        console.warn('Failed to save analysis state:', e);
+      }
+    };
+    
+    const clearAnalysisState = () => {
+      if (!user?.id) return;
+      try {
+        sessionStorage.removeItem(ongoingAnalysisKey);
+      } catch (e) {
+        console.warn('Failed to clear analysis state:', e);
+      }
+    };
 
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      // Progress simulation for upload
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 5, 30));
-      }, 100);
-
-      // Call analysis API
       setUploadStatus('analyzing');
-      
-      const response = await fetch('/api/demo-analyze', {
-        method: 'POST',
-        body: formData,
-      });
-
-      clearInterval(progressInterval);
-
-      // Progress for analysis
-      for (let i = 30; i <= 90; i += 10) {
-        await new Promise(r => setTimeout(r, 150));
-        setUploadProgress(i);
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Analysis failed');
-      }
-
-      const data = await response.json();
-      
-      // Save report to Clerk metadata
-      const report = {
-        id: data.reportId,
-        fileName: data.fileName || file.name,
-        fileSize: data.fileSize || file.size,
-        analysis: data.analysis,
-        createdAt: new Date().toISOString(),
-      };
+      setUploadProgress(0);
+      saveAnalysisState('analyzing', 0, 'Preparing document...', 600);
+      setUploadError(null);
+      setCurrentFileName(file.name);
+      setSelectedFile(file);
 
       try {
+        // Convert file directly to base64 in the browser (works for both images and PDFs)
+        const reader = new FileReader();
+        
+        const fileDataUrl = await new Promise<string>((resolve, reject) => {
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        // Start progress simulation with better tracking
+        setUploadStatus('analyzing');
+        setUploadProgress(0);
+        const processStartTime = Date.now();
+        setStartTime(processStartTime);
+        setEstimatedTimeRemaining(null); // Reset estimated time
+        setProgressMessage('Preparing document...');
+        
+        // Set initial estimate - start at 10 minutes, will count down based on real progress
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        // Start at 10 minutes (600 seconds) - will count down, never go up
+        const initialEstimateSeconds = 600; // 10 minutes
+        setEstimatedTimeRemaining(initialEstimateSeconds);
+      
+      // Use streaming API for REAL progress updates (not fake simulation!)
+      setProgressMessage('Connecting to analysis engine...');
+      setUploadProgress(0);
+      
+      let analyzeData: any = null;
+      let analyzeError: Error | null = null;
+      let countdownInterval: NodeJS.Timeout | null = null;
+      
+      try {
+        const response = await fetch('/api/analyze-stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileUrl: fileDataUrl,
+            fileName: file.name,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Analysis failed: ${response.statusText}`);
+        }
+
+        // Read the stream and update progress in real-time from ACTUAL work
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        
+        if (!reader) {
+          throw new Error('Failed to get response stream');
+        }
+
+        let buffer = '';
+        let currentProgress = 0; // Track progress locally (not from state)
+        let currentEstimate = initialEstimateSeconds; // Start at 10 minutes
+        
+        // Countdown timer - starts at 10 minutes, ALWAYS counts down, NEVER goes up
+        countdownInterval = setInterval(() => {
+          const now = Date.now();
+          const elapsedSeconds = (now - processStartTime) / 1000;
+          
+          // Calculate new estimate based on real progress (but only if we have progress)
+          if (currentProgress > 0 && currentProgress < 100 && elapsedSeconds > 2) {
+            // Calculate REAL progress rate from actual work
+            const progressRate = currentProgress / elapsedSeconds; // % per second
+            if (progressRate > 0) {
+              const remainingProgress = 100 - currentProgress;
+              const newEstimate = remainingProgress / progressRate;
+              
+              // ONLY update if new estimate is LESS than current (never go up!)
+              // And only if it's reasonable (not way off)
+              if (newEstimate >= 0 && newEstimate < currentEstimate && newEstimate < currentEstimate * 1.5) {
+                currentEstimate = newEstimate;
+              }
+            }
+          }
+          
+          // ALWAYS count down by 1 second each interval (simple countdown)
+          if (currentEstimate > 0) {
+            currentEstimate = Math.max(0, currentEstimate - 1);
+            setEstimatedTimeRemaining(Math.ceil(currentEstimate));
+          } else if (currentProgress >= 100) {
+            setEstimatedTimeRemaining(0);
+            if (countdownInterval) clearInterval(countdownInterval);
+          }
+        }, 1000); // Update every second
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            clearInterval(countdownInterval);
+            break;
+          }
+          
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep incomplete line in buffer
+          
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            
+            try {
+              const data = JSON.parse(line);
+              
+              if (data.type === 'progress') {
+                // REAL progress update from the API - actual work being done!
+                const realProgress = Math.min(data.progress, 100);
+                currentProgress = realProgress; // Update local tracker
+                setUploadProgress(realProgress);
+                setProgressMessage(data.message || 'Processing...');
+                setUploadStatus('analyzing');
+                saveAnalysisState('analyzing', realProgress, data.message || 'Processing...', currentEstimate);
+                
+                // Recalculate estimate immediately when we get real progress
+                const now = Date.now();
+                const elapsedSeconds = (now - processStartTime) / 1000;
+                
+                if (realProgress > 0 && realProgress < 100 && elapsedSeconds > 1) {
+                  // Calculate REAL progress rate from actual work
+                  const progressRate = realProgress / elapsedSeconds; // % per second
+                  if (progressRate > 0) {
+                    const remainingProgress = 100 - realProgress;
+                    const newEstimate = remainingProgress / progressRate;
+                    
+                    // ONLY update if new estimate is LESS than current (never go up!)
+                    // This ensures the timer only counts down, never up
+                    if (newEstimate >= 0 && newEstimate < currentEstimate) {
+                      currentEstimate = newEstimate;
+                      // Don't set it here - let the interval handle the countdown
+                    }
+                  }
+                }
+              } else if (data.type === 'complete') {
+                // Analysis complete
+                clearInterval(countdownInterval);
+                analyzeData = data;
+                setUploadProgress(100);
+                setProgressMessage('Complete!');
+                setEstimatedTimeRemaining(0);
+                clearAnalysisState(); // Clear ongoing analysis state on success
+              } else if (data.type === 'error') {
+                // Error occurred
+                clearInterval(countdownInterval);
+                analyzeError = new Error(data.error || 'Analysis failed');
+                clearAnalysisState(); // Clear ongoing analysis state on error
+                break;
+              }
+            } catch (parseError) {
+              console.error('Failed to parse progress update:', parseError, line);
+            }
+          }
+          
+          if (analyzeError) {
+            clearInterval(countdownInterval);
+            break;
+          }
+        }
+        
+        if (analyzeError) {
+          throw analyzeError;
+        }
+        
+        if (!analyzeData) {
+          throw new Error('Analysis completed but no data received');
+        }
+      } catch (fetchError) {
+        // Clean up any intervals
+        if (countdownInterval) {
+          clearInterval(countdownInterval);
+        }
+        setUploadProgress(0);
+        setProgressMessage('');
+        setEstimatedTimeRemaining(null);
+        setStartTime(null);
+        if (typeof clearAnalysisState === 'function') {
+          clearAnalysisState(); // Clear ongoing analysis state on error
+        }
+        throw fetchError;
+      }
+
+      const data = analyzeData;
+      
+      // Report is already saved to Firestore by the streaming endpoint
+      // But we need to ensure it's saved and update subscription tracking
+      try {
+        // Wait a moment for Firestore to propagate
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const reportData = {
+          id: data.reportId,
+          fileName: file.name,
+          fileSize: file.size,
+          analysis: data.analysis,
+          createdAt: new Date().toISOString(),
+        };
+        
+        // Save to local storage immediately
+        saveReportToLocal(reportData as Report);
+        
         const saveResponse = await fetch('/api/save-report', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(report),
+          body: JSON.stringify(reportData),
         });
         
-        const saveData = await saveResponse.json();
-        
-        // Show alert notification if triggered
-        if (saveData.alertTriggered && saveData.alertInfo) {
-          setAlertInfo({
-            fileName: saveData.alertInfo.fileName,
-            riskScore: saveData.alertInfo.riskScore,
-          });
-          setShowAlertNotification(true);
+        if (!saveResponse.ok) {
+          const errorText = await saveResponse.text();
+          console.error('Failed to save report via save-report endpoint:', errorText);
+          // Don't fail completely - report might already be saved from analyze-stream
+          // The report is already in local storage, so it won't be lost
+          console.warn('⚠️ Report save warning, but report is saved locally and may already be in database');
+        } else {
+          const saveData = await saveResponse.json();
           
-          // Auto-hide after 10 seconds
-          setTimeout(() => setShowAlertNotification(false), 10000);
+          // Update subscription state with new count
+          if (saveData.subscription) {
+            setSubscription(prev => ({
+              ...prev,
+              uploadsUsed: saveData.subscription.uploadsUsed || prev.uploadsUsed,
+            }));
+          }
+          
+          // Show alert notification if triggered
+          if (saveData.alertTriggered && saveData.alertInfo) {
+            setAlertInfo({
+              fileName: saveData.alertInfo.fileName,
+              riskScore: saveData.alertInfo.riskScore,
+            });
+            setShowAlertNotification(true);
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => setShowAlertNotification(false), 10000);
+          }
         }
       } catch (saveError) {
-        console.error('Failed to save report:', saveError);
-        // Continue anyway - report was analyzed successfully
+        console.error('Failed to update subscription:', saveError);
+        // Continue anyway - report was analyzed and saved successfully
       }
 
-      setUploadProgress(100);
-      setUploadStatus('success');
-
-      // Refresh reports and navigate
-      await fetchReports();
+      // Store report in sessionStorage for immediate access
+      const reportData = {
+        reportId: data.reportId,
+        fileName: file.name,
+        analysis: data.analysis,
+        createdAt: new Date().toISOString(),
+      };
       
-      setTimeout(() => {
-        router.push(`/reports/${data.reportId}`);
+      const sessionKey = `report_${data.reportId}`;
+      sessionStorage.setItem(sessionKey, JSON.stringify(reportData));
+      
+      // Progress is already at 100% from streaming, so navigate immediately
+      setUploadStatus('success');
+      clearAnalysisState(); // Clear ongoing analysis state on success
+      
+      // Save user profile with recent files (for cross-device sync)
+      if (user?.id && user?.emailAddresses?.[0]?.emailAddress) {
+        try {
+          const recentFiles = reports.slice(0, 9).map(r => ({
+            id: r.id,
+            fileName: r.fileName,
+            createdAt: r.createdAt,
+          }));
+          // Add the new report to the top
+          const updatedRecentFiles = [
+            { id: data.reportId, fileName: fileName || 'Untitled Document', createdAt: new Date().toISOString() },
+            ...recentFiles.filter(f => f.id !== data.reportId),
+          ].slice(0, 10);
+          
+          fetch('/api/user-profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              preferences: {},
+              settings: {},
+              recentFiles: updatedRecentFiles,
+            }),
+          }).catch(e => console.warn('Failed to save user profile:', e));
+        } catch (e) {
+          console.warn('Error preparing user profile save:', e);
+        }
+      }
+      
+      // Wait a bit longer for Firestore to be ready, then refresh reports list
+      setTimeout(async () => {
+        await fetchReports();
+        
+        // Navigate after reports are refreshed
+        setTimeout(() => {
+          router.push(`/reports/${data.reportId}`);
+        }, 500);
       }, 1000);
 
     } catch (err) {
+      console.error('File processing error:', err);
       setUploadStatus('error');
       setUploadError(err instanceof Error ? err.message : 'Something went wrong');
+      setUploadProgress(0);
+      setProgressMessage('');
+      setEstimatedTimeRemaining(null);
+      setStartTime(null);
+      // Clear analysis state on error
+      try {
+        const ongoingAnalysisKey = `lifeos_ongoing_analysis_${user?.id}`;
+        if (user?.id) {
+          sessionStorage.removeItem(ongoingAnalysisKey);
+        }
+      } catch (e) {
+        console.warn('Failed to clear analysis state:', e);
+      }
     }
-  };
+  }, [canUpload, maxUploads, fetchReports, user?.id]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      console.log('File selected:', file.name, file.type, file.size);
+      if (validateFile(file)) {
+        processFile(file);
+      }
+    } else {
+      console.log('No file selected');
+    }
+    // Reset input so same file can be selected again
+    if (e.target) {
+      e.target.value = '';
+    }
+  }, [validateFile, processFile]);
 
   if (!isLoaded || loading) {
     return (
@@ -247,7 +941,7 @@ export default function DashboardPage() {
               {user?.firstName ? `Welcome, ${user.firstName}` : 'Dashboard'}
             </h1>
             <p className="text-white/50">
-              {uploadsUsed}/{maxUploads === Infinity ? '∞' : maxUploads} analyses used · {subscription.tier.charAt(0).toUpperCase() + subscription.tier.slice(1)} plan
+              {getAnalysesDisplay()} analyses used · {isOwner ? 'DEV' : effectiveTier.charAt(0).toUpperCase() + effectiveTier.slice(1)} plan
             </p>
           </motion.div>
 
@@ -306,12 +1000,18 @@ export default function DashboardPage() {
                           onDragOver={handleDragOver}
                           onDragLeave={handleDragLeave}
                           onDrop={handleDrop}
-                          className={`p-8 border-2 border-dashed rounded-2xl text-center transition-all ${
+                          onClick={() => {
+                            // Allow clicking anywhere in the drop zone to trigger file picker
+                            if (fileInputRef.current && !isDragging) {
+                              fileInputRef.current.click();
+                            }
+                          }}
+                          className={`p-8 border-2 border-dashed rounded-2xl text-center transition-all cursor-pointer ${
                             isDragging
                               ? 'border-[#0071e3] bg-[#0071e3]/10'
                               : uploadError 
                                 ? 'border-[#ff3b30] bg-[#ff3b30]/5'
-                                : 'border-white/20'
+                                : 'border-white/20 hover:border-white/30'
                           }`}
                         >
                           <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center transition-colors ${
@@ -324,30 +1024,54 @@ export default function DashboardPage() {
                           <p className="text-white font-medium mb-2">
                             {isDragging ? 'Drop your file here' : 'Upload a document to analyze'}
                           </p>
-                          <p className="text-white/40 text-sm mb-6">PDF, PNG, JPG up to 10MB</p>
+                          <p className="text-white/40 text-sm mb-6">PNG, JPG, WEBP, GIF, PDF up to 10MB</p>
                           
-                          {/* File input with explicit button trigger */}
+                          {/* Buttons side by side */}
+                          <div className="flex gap-3">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent triggering parent click
+                                console.log('Button clicked, fileInputRef:', fileInputRef.current);
+                                if (fileInputRef.current) {
+                                  fileInputRef.current.click();
+                                } else {
+                                  console.error('File input ref is null!');
+                                  setUploadError('File input not available. Please refresh the page.');
+                                }
+                              }}
+                              className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0071e3] text-white rounded-full font-medium hover:bg-[#0077ed] transition-colors"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                              </svg>
+                              Upload File
+                            </button>
+                            
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push('/dashboard/build-from-scratch');
+                              }}
+                              className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-full font-medium transition-colors text-sm"
+                            >
+                              Build from Scratch
+                            </button>
+                          </div>
+                          
+                          <p className="text-white/50 text-xs text-center mt-3">
+                            Don't have documents? Build them from scratch
+                          </p>
+                          
+                          {/* File input - hidden but accessible */}
                           <input
                             ref={fileInputRef}
                             type="file"
-                            accept=".pdf,.png,.jpg,.jpeg,.webp"
+                            accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,application/pdf"
                             onChange={handleFileSelect}
-                            style={{ position: 'absolute', left: '-9999px' }}
+                            className="hidden"
+                            aria-label="Choose file to analyze"
                           />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (fileInputRef.current) {
-                                fileInputRef.current.click();
-                              }
-                            }}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-[#0071e3] text-white rounded-full font-medium hover:bg-[#0077ed] transition-colors"
-                          >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                            </svg>
-                            Choose File
-                          </button>
                           
                           {uploadError && (
                             <p className="mt-4 text-[#ff3b30] text-sm">{uploadError}</p>
@@ -374,19 +1098,58 @@ export default function DashboardPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-white font-medium truncate">{currentFileName}</p>
                           <p className="text-white/50 text-sm">
-                            {uploadStatus === 'uploading' ? 'Uploading...' : 'Analyzing with AI...'}
+                            {progressMessage || (uploadStatus === 'uploading' ? 'Uploading...' : 'Analyzing with AI...')}
+                            {estimatedTimeRemaining !== null && estimatedTimeRemaining > 0 && (
+                              <span className="ml-2">~{Math.floor(estimatedTimeRemaining / 60)}:{(estimatedTimeRemaining % 60).toString().padStart(2, '0')} remaining</span>
+                            )}
                           </p>
                         </div>
                       </div>
-                      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div className="relative w-full bg-white/10 rounded-full h-4 overflow-hidden">
                         <motion.div
-                          className="h-full bg-[#0071e3] rounded-full"
+                          className="h-full rounded-full relative"
+                          style={{
+                            width: `${uploadProgress}%`,
+                            background: `linear-gradient(to right, ${interpolateColor(uploadProgress)}, ${interpolateColor(Math.min(100, uploadProgress + 5))})`,
+                          }}
                           initial={{ width: 0 }}
                           animate={{ width: `${uploadProgress}%` }}
-                          transition={{ duration: 0.3 }}
-                        />
+                          transition={{ duration: 0.3, ease: 'easeOut' }}
+                        >
+                          {/* Animated shimmer effect */}
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                            animate={{
+                              x: ['-100%', '200%'],
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              ease: 'linear',
+                            }}
+                            style={{ width: '50%' }}
+                          />
+                        </motion.div>
                       </div>
-                      <p className="text-center text-white/40 text-sm mt-4">{uploadProgress}% complete</p>
+                      
+                      <div className="flex items-center justify-between mt-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+                          <p className="text-white/80 text-sm font-medium">
+                            {progressMessage || `${Math.round(uploadProgress)}% complete`}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-white/60 text-sm">
+                            {Math.round(uploadProgress)}%
+                          </p>
+                          {estimatedTimeRemaining !== null && estimatedTimeRemaining > 0 && (
+                            <p className="text-white/40 text-xs mt-1">
+                              ~{Math.floor(estimatedTimeRemaining / 60)}:{(estimatedTimeRemaining % 60).toString().padStart(2, '0')} remaining
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </motion.div>
                   )}
 
@@ -441,15 +1204,40 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between p-6 border-b border-white/5">
                   <h2 className="text-xl font-semibold text-white">Recent Reports</h2>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm text-white/40">{reports.length} total</span>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setLoading(true);
+                        fetchReports().finally(() => {
+                          setLoading(false);
+                        });
+                      }}
+                      disabled={loading}
+                      className="text-sm text-[#0071e3] hover:text-[#0077ed] font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                      title="Refresh reports"
+                    >
+                      <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Refresh
+                    </button>
+                    <span className="text-sm text-white/40">{reports.length} {reports.length === 1 ? 'report' : 'reports'}</span>
                     {reports.length > 0 && (
                       <Link 
                         href="/reports" 
-                        className="text-sm text-[#0071e3] hover:text-[#0077ed] font-medium"
+                        className="text-sm text-[#0071e3] hover:text-[#0077ed] font-medium transition-colors"
                       >
-                        View All →
+                        View All Reports →
                       </Link>
                     )}
+                    <Link 
+                      href="/privacy-agreement" 
+                      className="text-sm text-white/40 hover:text-white/60 font-medium transition-colors"
+                      title="View Privacy Policy Agreements"
+                    >
+                      Privacy
+                    </Link>
                   </div>
                 </div>
 
@@ -465,26 +1253,29 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="divide-y divide-white/5">
+                    {/* Show only first 5-10 reports in Recent Reports */}
                     {reports.slice(0, 5).map((report, i) => {
                       const score = report.analysis?.overallRiskScore || 0;
                       return (
                         <Link
                           key={report.id}
                           href={`/reports/${report.id}`}
-                          className="flex items-center gap-4 p-5 hover:bg-white/5 transition-colors"
+                          className="flex items-center gap-4 p-5 hover:bg-white/5 transition-colors group"
                         >
-                          <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center">
+                          <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center group-hover:bg-[#0071e3]/20 transition-colors">
                             <svg className="w-6 h-6 text-[#0071e3]" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
                             </svg>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-white font-medium truncate">{report.fileName}</p>
+                            <p className="text-white font-medium truncate group-hover:text-[#0071e3] transition-colors">{report.fileName}</p>
                             <p className="text-white/40 text-sm">
                               {new Date(report.createdAt).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
                               })}
                             </p>
                           </div>
@@ -493,11 +1284,22 @@ export default function DashboardPage() {
                             score >= 5 ? 'bg-[#ff9500]/20 text-[#ff9500]' :
                             'bg-[#34c759]/20 text-[#34c759]'
                           }`}>
-                            {score}
+                            {score.toFixed(1)}
                           </div>
                         </Link>
                       );
                     })}
+                    {reports.length > 5 && (
+                      <div className="p-5 text-center">
+                        <p className="text-white/50 text-sm mb-3">Showing {Math.min(reports.length, 5)} of {reports.length} reports</p>
+                        <Link 
+                          href="/reports" 
+                          className="inline-flex items-center gap-2 text-sm text-[#0071e3] hover:text-[#0077ed] font-medium transition-colors"
+                        >
+                          View All Reports with Filters →
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 )}
               </motion.div>
@@ -723,6 +1525,28 @@ export default function DashboardPage() {
               </div>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Privacy Agreement Modal */}
+      <AnimatePresence>
+        {showPrivacyModal && (
+          <PrivacyAgreementModal
+            isBlocking={true} // Block all usage until agreed
+            onAgree={async () => {
+              setShowPrivacyModal(false);
+              // Wait a moment for the save to complete
+              await new Promise(resolve => setTimeout(resolve, 500));
+              if (pendingFile) {
+                processFile(pendingFile);
+                setPendingFile(null);
+              }
+            }}
+            onCancel={() => {
+              // If blocking, don't allow cancel - they must agree
+              alert('You must agree to the Privacy Policy and Terms of Service to use LifeØS. If you do not agree, please close this browser window.');
+            }}
+          />
         )}
       </AnimatePresence>
     </div>

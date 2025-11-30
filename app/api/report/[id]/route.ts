@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { getReport, updateReportPdf } from '@/lib/firebase-admin';
+import { getReportFromSupabase } from '@/lib/supabase';
+import { getReportFromFirestore } from '@/lib/firestore-rest';
 import { generateCompliancePDF } from '@/lib/pdf-generator';
-import { adminStorage } from '@/lib/firebase-admin';
 
 // GET report by ID
 export async function GET(
@@ -16,7 +16,13 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const report = await getReport(id);
+    // PRIMARY: Try Supabase first
+    let report = await getReportFromSupabase(id, userId);
+    
+    // BACKUP: If not found in Supabase, try Firestore
+    if (!report) {
+      report = await getReportFromFirestore(id);
+    }
 
     if (!report) {
       return NextResponse.json({ error: 'Report not found' }, { status: 404 });
@@ -33,7 +39,7 @@ export async function GET(
   }
 }
 
-// Generate PDF for report
+// Generate PDF for report (returns PDF directly, no storage needed)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -45,7 +51,13 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const report = await getReport(id);
+    // PRIMARY: Try Supabase first
+    let report = await getReportFromSupabase(id, userId);
+    
+    // BACKUP: If not found in Supabase, try Firestore
+    if (!report) {
+      report = await getReportFromFirestore(id);
+    }
 
     if (!report) {
       return NextResponse.json({ error: 'Report not found' }, { status: 404 });
@@ -55,31 +67,20 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    if (report.pdfUrl) {
-      return NextResponse.json({ success: true, pdfUrl: report.pdfUrl, cached: true });
-    }
-
+    // Generate PDF on demand
     const pdfBuffer = await generateCompliancePDF(report.analysis, {
       reportTitle: `Compliance Report - ${report.fileName}`,
       includeBoilerplate: true,
     });
 
-    const pdfPath = `reports/${userId}/${id}.pdf`;
-    const bucket = adminStorage().bucket();
-    const fileRef = bucket.file(pdfPath);
+    // Convert to base64 for JSON response
+    const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
 
-    await fileRef.save(pdfBuffer, {
-      metadata: {
-        contentType: 'application/pdf',
-        metadata: { reportId: id, generatedAt: new Date().toISOString() },
-      },
+    return NextResponse.json({ 
+      success: true, 
+      pdfBase64,
+      fileName: `compliance-report-${id}.pdf`,
     });
-
-    await fileRef.makePublic();
-    const pdfUrl = `https://storage.googleapis.com/${bucket.name}/${pdfPath}`;
-    await updateReportPdf(id, pdfUrl);
-
-    return NextResponse.json({ success: true, pdfUrl, cached: false });
   } catch (error) {
     console.error('PDF generation error:', error);
     return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 });
@@ -98,7 +99,13 @@ export async function PUT(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const report = await getReport(id);
+    // PRIMARY: Try Supabase first
+    let report = await getReportFromSupabase(id, userId);
+    
+    // BACKUP: If not found in Supabase, try Firestore
+    if (!report) {
+      report = await getReportFromFirestore(id);
+    }
 
     if (!report) {
       return new NextResponse('Report not found', { status: 404 });

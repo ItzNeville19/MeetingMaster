@@ -15,9 +15,14 @@ export default function BrandingPage() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const subscription = user?.publicMetadata?.subscription as { tier?: string } | undefined;
+  const subscription = user?.publicMetadata?.subscription as { 
+    tier?: string; 
+    isOwner?: boolean; 
+    isDev?: boolean;
+  } | undefined;
   const tier = subscription?.tier || 'free';
-  const hasAccess = tier === 'pro';
+  const isOwner = subscription?.isOwner || subscription?.isDev;
+  const hasAccess = isOwner || tier === 'pro';
 
   // Load existing branding settings
   useEffect(() => {

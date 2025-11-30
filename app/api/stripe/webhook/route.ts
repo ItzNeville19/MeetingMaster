@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import stripe from '@/lib/stripe';
-import { adminDb } from '@/lib/firebase-admin';
+import { saveSubscriptionToFirestore, updateSubscriptionInFirestore } from '@/lib/firestore-rest';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -13,11 +13,10 @@ async function updateUserSubscription(
     subscriptionId: string;
     status: string;
     tier: string;
-    currentPeriodEnd: Date;
+    currentPeriodEnd: string;
   }
 ) {
-  const db = adminDb();
-  await db.collection('subscriptions').doc(userId).set(subscriptionData, { merge: true });
+  await saveSubscriptionToFirestore(userId, subscriptionData);
 }
 
 export async function POST(request: NextRequest) {
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
             subscriptionId: subscription.id,
             status: subscription.status,
             tier,
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
           });
         }
         break;
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
             subscriptionId: subscription.id,
             status: subscription.status,
             tier,
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
           });
         }
         break;
@@ -91,8 +90,7 @@ export async function POST(request: NextRequest) {
         const userId = subscription.metadata?.userId;
 
         if (userId) {
-          const db = adminDb();
-          await db.collection('subscriptions').doc(userId).update({
+          await updateSubscriptionInFirestore(userId, {
             status: 'canceled',
             canceledAt: new Date().toISOString(),
           });
@@ -109,8 +107,7 @@ export async function POST(request: NextRequest) {
           const userId = subscription.metadata?.userId;
 
           if (userId) {
-            const db = adminDb();
-            await db.collection('subscriptions').doc(userId).update({
+            await updateSubscriptionInFirestore(userId, {
               status: 'past_due',
               lastPaymentFailed: new Date().toISOString(),
             });
@@ -132,5 +129,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

@@ -30,12 +30,17 @@ export default function InsightsPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [alerts, setAlerts] = useState<AlertHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'digest' | 'alerts'>('digest');
+  const [activeTab, setActiveTab] = useState<'digest' | 'alerts' | 'trends'>('digest');
 
-  const subscription = user?.publicMetadata?.subscription as { tier?: string } | undefined;
+  const subscription = user?.publicMetadata?.subscription as { 
+    tier?: string; 
+    isOwner?: boolean; 
+    isDev?: boolean;
+  } | undefined;
   const tier = subscription?.tier || 'free';
-  const hasDigest = tier === 'growth' || tier === 'pro';
-  const hasAlerts = tier === 'pro';
+  const isOwner = subscription?.isOwner || subscription?.isDev;
+  const hasDigest = isOwner || tier === 'growth' || tier === 'pro';
+  const hasAlerts = isOwner || tier === 'pro';
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -120,6 +125,16 @@ export default function InsightsPage() {
             >
               Weekly Digest
             </button>
+            {(hasDigest || isOwner) && (
+              <button
+                onClick={() => setActiveTab('trends')}
+                className={`px-6 py-3 rounded-full font-medium transition-all ${
+                  activeTab === 'trends' ? 'bg-white text-[#1d1d1f]' : 'bg-white/5 text-white/60 hover:bg-white/10'
+                }`}
+              >
+                Risk Trends
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('alerts')}
               className={`px-6 py-3 rounded-full font-medium transition-all flex items-center gap-2 ${
@@ -263,6 +278,154 @@ export default function InsightsPage() {
                         <p className="text-white/80">Schedule a monthly compliance review with your team</p>
                       </li>
                     </ul>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
+
+          {/* Risk Trends Tab */}
+          {activeTab === 'trends' && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              {!hasDigest && !isOwner ? (
+                <div className="bg-[#1d1d1f] rounded-3xl border border-white/10 p-12 text-center">
+                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg className="w-10 h-10 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-4">Risk Trend Charts</h2>
+                  <p className="text-white/60 mb-8">Track compliance over time with visual trend analysis. Upgrade to Growth or Pro.</p>
+                  <Link href="/pricing" className="px-8 py-4 bg-[#0071e3] text-white rounded-full font-semibold hover:bg-[#0077ed] transition-colors inline-block">
+                    Upgrade to Unlock
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  {/* Risk Score Trend Chart */}
+                  <div className="bg-[#1d1d1f] rounded-3xl border border-white/10 p-8">
+                    <h2 className="text-xl font-semibold text-white mb-6">Risk Score Trend (Last 30 Days)</h2>
+                    {reports.length === 0 ? (
+                      <div className="text-center py-12">
+                        <p className="text-white/50">No data yet. Upload documents to see trends.</p>
+                      </div>
+                    ) : (
+                      <div className="relative h-64">
+                        <svg viewBox="0 0 800 200" className="w-full h-full">
+                          <defs>
+                            <linearGradient id="riskGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stopColor="#0071e3" stopOpacity="0.3" />
+                              <stop offset="100%" stopColor="#0071e3" stopOpacity="0" />
+                            </linearGradient>
+                          </defs>
+                          {/* Grid lines */}
+                          {[0, 2, 4, 6, 8, 10].map((y) => (
+                            <line
+                              key={y}
+                              x1="50"
+                              y1={180 - (y * 18)}
+                              x2="750"
+                              y2={180 - (y * 18)}
+                              stroke="rgba(255,255,255,0.1)"
+                              strokeWidth="1"
+                            />
+                          ))}
+                          {/* Risk score line */}
+                          <path
+                            d={(() => {
+                              const sortedReports = [...reports]
+                                .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                                .slice(-30);
+                              if (sortedReports.length === 0) return '';
+                              const points = sortedReports.map((report, i) => {
+                                const x = 50 + (i / (sortedReports.length - 1 || 1)) * 700;
+                                const score = report.analysis?.overallRiskScore || 0;
+                                const y = 180 - (score * 18);
+                                return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                              }).join(' ');
+                              return points;
+                            })()}
+                            fill="none"
+                            stroke="#0071e3"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          {/* Area under curve */}
+                          <path
+                            d={(() => {
+                              const sortedReports = [...reports]
+                                .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                                .slice(-30);
+                              if (sortedReports.length === 0) return '';
+                              const points = sortedReports.map((report, i) => {
+                                const x = 50 + (i / (sortedReports.length - 1 || 1)) * 700;
+                                const score = report.analysis?.overallRiskScore || 0;
+                                const y = 180 - (score * 18);
+                                return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                              }).join(' ');
+                              const lastX = sortedReports.length > 0 ? 50 + ((sortedReports.length - 1) / (sortedReports.length - 1 || 1)) * 700 : 50;
+                              return `${points} L ${lastX} 180 L 50 180 Z`;
+                            })()}
+                            fill="url(#riskGradient)"
+                          />
+                          {/* Y-axis labels */}
+                          {[0, 2, 4, 6, 8, 10].map((y) => (
+                            <text
+                              key={y}
+                              x="45"
+                              y={185 - (y * 18)}
+                              fill="rgba(255,255,255,0.5)"
+                              fontSize="10"
+                              textAnchor="end"
+                            >
+                              {y}
+                            </text>
+                          ))}
+                          {/* X-axis */}
+                          <line x1="50" y1="180" x2="750" y2="180" stroke="rgba(255,255,255,0.2)" strokeWidth="2" />
+                        </svg>
+                        <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-white/40 px-4">
+                          <span>30 days ago</span>
+                          <span>Today</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Risk Category Breakdown */}
+                  <div className="bg-[#1d1d1f] rounded-3xl border border-white/10 p-8">
+                    <h2 className="text-xl font-semibold text-white mb-6">Risk Categories Over Time</h2>
+                    {reports.length === 0 ? (
+                      <div className="text-center py-12">
+                        <p className="text-white/50">No data yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {['OSHA', 'HIPAA', 'ADA', 'General'].map((category) => {
+                          const categoryRisks = reports.reduce((sum, r) => {
+                            return sum + (r.analysis?.risks?.filter((risk: any) => 
+                              risk.category?.includes(category) || (category === 'General' && !risk.category)
+                            ).length || 0);
+                          }, 0);
+                          const percentage = totalRisks > 0 ? (categoryRisks / totalRisks) * 100 : 0;
+                          return (
+                            <div key={category}>
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-white/80 font-medium">{category}</span>
+                                <span className="text-white/50 text-sm">{categoryRisks} risks ({percentage.toFixed(0)}%)</span>
+                              </div>
+                              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-[#0071e3] to-[#5856d6] rounded-full transition-all"
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </>
               )}

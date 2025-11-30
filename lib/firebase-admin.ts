@@ -6,14 +6,27 @@ let adminApp: App;
 
 function getAdminApp(): App {
   if (getApps().length === 0) {
+    // Only initialize if we have the credentials (optional - we use REST API now)
+    const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
+    
+    if (!projectId || !clientEmail || !privateKey) {
+      throw new Error('Firebase Admin credentials not configured. Using REST API instead - this is fine!');
+    }
+    
+    try {
     adminApp = initializeApp({
       credential: cert({
-        projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+          projectId,
+          clientEmail,
+          privateKey: privateKey.replace(/\\n/g, '\n'),
       }),
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
+    } catch (error) {
+      throw new Error(`Failed to initialize Firebase Admin: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   } else {
     adminApp = getApps()[0];
   }
@@ -73,5 +86,28 @@ export async function getReport(reportId: string): Promise<any | null> {
 export async function updateReportPdf(reportId: string, pdfUrl: string): Promise<void> {
   const db = adminDb();
   await db.collection('reports').doc(reportId).update({ pdfUrl });
+}
+
+// Save privacy agreement to Firestore for legal records
+export async function savePrivacyAgreement(
+  agreementId: string,
+  agreementData: {
+    userId: string;
+    userEmail: string;
+    agreed: boolean;
+    agreementDate: string;
+    dontShowAgain: boolean;
+    ipAddress: string;
+    userAgent: string;
+    agreementText: string;
+    agreementVersion: string;
+    createdAt: string;
+  }
+): Promise<void> {
+  const db = adminDb();
+  await db.collection('privacyAgreements').doc(agreementId).set({
+    ...agreementData,
+    id: agreementId,
+  });
 }
 

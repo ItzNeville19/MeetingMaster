@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useInView } from 'framer-motion';
 import Link from 'next/link';
 import NavBar from '@/components/NavBar';
 import { useUser } from '@clerk/nextjs';
+import { useOwnerUpgrade } from '@/lib/useOwnerUpgrade';
 
 // All benefits from pricing - COMPREHENSIVE list
 const allBenefits = [
@@ -74,6 +75,23 @@ const allBenefits = [
     ),
     demoType: 'plan',
   },
+  {
+    id: 'compliance-chatbot',
+    category: 'Core',
+    name: 'JC Compliance Chatbot',
+    shortDesc: 'AI assistant for compliance questions',
+    fullDesc: 'Chat with JC, our AI compliance assistant. Get instant answers about your audits, risks, regulations, account management, and more. Free users get 5 messages per day. Starter and above get unlimited messages.',
+    limit: { free: '5/day', starter: 'Unlimited', growth: 'Unlimited', pro: 'Unlimited' },
+    tiers: ['free', 'starter', 'growth', 'pro'],
+    claimAction: '/dashboard',
+    claimLabel: 'Chat with JC',
+    icon: (
+      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337L5 20l1.318-3.975A9.72 9.72 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+      </svg>
+    ),
+    demoType: 'chat',
+  },
   // Analytics Features
   {
     id: 'trend-charts',
@@ -82,8 +100,8 @@ const allBenefits = [
     shortDesc: 'Track compliance over time',
     fullDesc: 'Visualize how your compliance score improves over time. See which areas are getting better and which need more attention.',
     tiers: ['growth', 'pro'],
-    claimAction: '/dashboard',
-    claimLabel: 'View Analytics',
+    claimAction: '/insights',
+    claimLabel: 'View Trends',
     icon: (
       <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
@@ -160,6 +178,22 @@ const allBenefits = [
     demoType: null,
   },
   {
+    id: 'audit-trail',
+    category: 'Analytics',
+    name: 'Compliance Audit Trail',
+    shortDesc: 'Complete history of all compliance actions',
+    fullDesc: 'Track every change, analysis, and action taken in your compliance journey. See who did what, when, and why. Perfect for audits and demonstrating due diligence to regulators.',
+    tiers: ['growth', 'pro'],
+    claimAction: '/audit-trail',
+    claimLabel: 'View Audit Trail',
+    icon: (
+      <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+    demoType: null,
+  },
+  {
     id: 'team-dashboard',
     category: 'Collaboration',
     name: 'Team Dashboard',
@@ -217,9 +251,8 @@ const allBenefits = [
     shortDesc: 'Around-the-clock assistance',
     fullDesc: 'Get help anytime, day or night. Our enterprise support team is available 24/7 for critical issues.',
     tiers: ['pro'],
-    claimAction: 'mailto:neville@rayze.xyz?subject=[LifeØS Pro 24/7] Urgent Support',
-    claimLabel: '24/7 Support',
-    isEmail: true,
+    claimAction: '/support',
+    claimLabel: 'Get Support',
     icon: (
       <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -234,9 +267,8 @@ const allBenefits = [
     shortDesc: 'Your personal compliance expert',
     fullDesc: 'Get a dedicated account manager who knows your business. Schedule strategy sessions and get personalized guidance.',
     tiers: ['pro'],
-    claimAction: 'mailto:neville@rayze.xyz?subject=[LifeØS Pro] Schedule Account Manager Call',
-    claimLabel: 'Schedule Call',
-    isEmail: true,
+    claimAction: '/account-manager',
+    claimLabel: 'Meet Your Manager',
     icon: (
       <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -296,6 +328,50 @@ const allBenefits = [
 ];
 
 const categories = ['Core', 'Analytics', 'Collaboration', 'Support', 'Enterprise'];
+
+// Color schemes for each category to differentiate benefits visually
+const categoryColors: Record<string, { gradient: string; iconBg: string; iconColor: string; border: string; hoverGlow: string; button: string }> = {
+  'Core': {
+    gradient: 'from-[#0071e3]/10 to-[#0071e3]/5',
+    iconBg: 'from-[#0071e3]/20 to-[#0077ed]/20',
+    iconColor: 'text-[#0071e3]',
+    border: 'border-[#0071e3]/20',
+    hoverGlow: 'from-[#0071e3]/10',
+    button: 'bg-[#0071e3] hover:bg-[#0077ed]',
+  },
+  'Analytics': {
+    gradient: 'from-[#5856d6]/10 to-[#5856d6]/5',
+    iconBg: 'from-[#5856d6]/20 to-[#af52de]/20',
+    iconColor: 'text-[#5856d6]',
+    border: 'border-[#5856d6]/20',
+    hoverGlow: 'from-[#5856d6]/10',
+    button: 'bg-[#5856d6] hover:bg-[#6b69e8]',
+  },
+  'Collaboration': {
+    gradient: 'from-[#34c759]/10 to-[#34c759]/5',
+    iconBg: 'from-[#34c759]/20 to-[#30d158]/20',
+    iconColor: 'text-[#34c759]',
+    border: 'border-[#34c759]/20',
+    hoverGlow: 'from-[#34c759]/10',
+    button: 'bg-[#34c759] hover:bg-[#30d158]',
+  },
+  'Support': {
+    gradient: 'from-[#ff9500]/10 to-[#ff9500]/5',
+    iconBg: 'from-[#ff9500]/20 to-[#ffad33]/20',
+    iconColor: 'text-[#ff9500]',
+    border: 'border-[#ff9500]/20',
+    hoverGlow: 'from-[#ff9500]/10',
+    button: 'bg-[#ff9500] hover:bg-[#ffad33]',
+  },
+  'Enterprise': {
+    gradient: 'from-[#af52de]/10 to-[#af52de]/5',
+    iconBg: 'from-[#af52de]/20 to-[#c969f0]/20',
+    iconColor: 'text-[#af52de]',
+    border: 'border-[#af52de]/20',
+    hoverGlow: 'from-[#af52de]/10',
+    button: 'bg-[#af52de] hover:bg-[#c969f0]',
+  },
+};
 
 // Mini demo components
 function ScannerDemo() {
@@ -416,21 +492,68 @@ function APIDemo() {
 
 export default function BenefitsPage() {
   const { user, isLoaded } = useUser();
-  const [subscription, setSubscription] = useState({ tier: 'free', uploadsUsed: 0 });
+  const [subscription, setSubscription] = useState<{
+    tier: string;
+    uploadsUsed: number;
+    isOwner?: boolean;
+    isDev?: boolean;
+  }>({ tier: 'free', uploadsUsed: 0 });
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [expandedBenefit, setExpandedBenefit] = useState<string | null>(null);
+  
+  // Auto-upgrade owner account
+  useOwnerUpgrade();
 
   useEffect(() => {
     if (isLoaded && user) {
+      // Check user metadata directly first
+      const userSub = user.publicMetadata?.subscription as any;
+      const userEmail = user.emailAddresses?.find(e => e.id === user.primaryEmailAddressId)?.emailAddress || 
+                       user.emailAddresses?.[0]?.emailAddress;
+      
+      // Check if this is the owner email
+      const isOwnerEmail = userEmail?.toLowerCase() === 'neville@rayze.xyz';
+      
+      // Set subscription from metadata or default
+      const sub = userSub || { tier: 'free', uploadsUsed: 0 };
+      
+      // If owner email, force pro tier and dev access
+      if (isOwnerEmail) {
+        sub.isOwner = true;
+        sub.isDev = true;
+        sub.tier = 'pro';
+        sub.uploadsLimit = -1;
+        sub.teamMembersLimit = -1;
+        sub.locationsLimit = -1;
+      }
+      
+      setSubscription(sub);
+      
+      // Also fetch from API to get reports count, but don't wait for it
       fetch('/api/get-reports')
         .then(res => res.json())
-        .then(data => setSubscription(data.subscription || { tier: 'free', uploadsUsed: 0 }))
+        .then(data => {
+          if (data.subscription) {
+            const apiSub = data.subscription;
+            // Merge API data but keep owner flags
+            setSubscription({
+              ...apiSub,
+              isOwner: sub.isOwner || apiSub.isOwner,
+              isDev: sub.isDev || apiSub.isDev,
+              tier: sub.tier || apiSub.tier,
+            });
+          }
+        })
         .catch(() => {});
     }
   }, [isLoaded, user]);
 
-  const tier = subscription.tier;
-  const unlockedCount = allBenefits.filter(b => b.tiers.includes(tier)).length;
+  // Check if user is owner/dev - DEV accounts get EVERYTHING
+  const isOwner = subscription.isOwner || subscription.isDev;
+  const tier = isOwner ? 'pro' : subscription.tier;
+  
+  // DEV accounts unlock ALL benefits
+  const unlockedCount = isOwner ? allBenefits.length : allBenefits.filter(b => b.tiers.includes(tier)).length;
   const filteredBenefits = activeCategory 
     ? allBenefits.filter(b => b.category === activeCategory)
     : allBenefits;
@@ -479,7 +602,9 @@ export default function BenefitsPage() {
                     </div>
                     <div className="text-left">
                       <p className="text-white font-semibold text-lg">{user?.fullName || 'Member'}</p>
-                      <p className="text-[#0071e3] font-medium">{tier.charAt(0).toUpperCase() + tier.slice(1)} Member</p>
+                      <p className="text-[#0071e3] font-medium">
+                        {isOwner ? 'DEV' : tier.charAt(0).toUpperCase() + tier.slice(1)} Member
+                      </p>
                     </div>
                     <div className="ml-8 text-right">
                       <p className="text-white/40 text-sm">Benefits</p>
@@ -494,8 +619,8 @@ export default function BenefitsPage() {
               Your <span className="bg-gradient-to-r from-[#0071e3] via-[#5856d6] to-[#af52de] bg-clip-text text-transparent">Membership</span>
             </h1>
             <p className="text-[20px] text-white/50 max-w-2xl mx-auto">
-              Claim and use every benefit included with your {tier.charAt(0).toUpperCase() + tier.slice(1)} membership.
-              {tier !== 'pro' && ' Upgrade to unlock more.'}
+              Claim and use every benefit included with your {isOwner ? 'DEV' : tier.charAt(0).toUpperCase() + tier.slice(1)} membership.
+              {!isOwner && tier !== 'pro' && ' Upgrade to unlock more.'}
             </p>
           </motion.div>
 
@@ -538,8 +663,25 @@ export default function BenefitsPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             <AnimatePresence mode="popLayout">
               {filteredBenefits.map((benefit, i) => {
-                const isUnlocked = benefit.tiers.includes(tier);
+                // DEV accounts unlock EVERYTHING
+                const isUnlocked = isOwner || benefit.tiers.includes(tier);
                 const isExpanded = expandedBenefit === benefit.id;
+                
+                const categoryColor = categoryColors[benefit.category] || categoryColors['Core'];
+                const borderColorClass = isUnlocked 
+                  ? categoryColor.border === 'border-[#0071e3]/20' ? 'border-[#0071e3]/20 hover:border-[#0071e3]/30'
+                  : categoryColor.border === 'border-[#5856d6]/20' ? 'border-[#5856d6]/20 hover:border-[#5856d6]/30'
+                  : categoryColor.border === 'border-[#34c759]/20' ? 'border-[#34c759]/20 hover:border-[#34c759]/30'
+                  : categoryColor.border === 'border-[#ff9500]/20' ? 'border-[#ff9500]/20 hover:border-[#ff9500]/30'
+                  : 'border-[#af52de]/20 hover:border-[#af52de]/30'
+                  : 'border-white/5';
+                const ringColorClass = isExpanded
+                  ? categoryColor.border === 'border-[#0071e3]/20' ? 'ring-2 ring-[#0071e3]'
+                  : categoryColor.border === 'border-[#5856d6]/20' ? 'ring-2 ring-[#5856d6]'
+                  : categoryColor.border === 'border-[#34c759]/20' ? 'ring-2 ring-[#34c759]'
+                  : categoryColor.border === 'border-[#ff9500]/20' ? 'ring-2 ring-[#ff9500]'
+                  : 'ring-2 ring-[#af52de]'
+                  : '';
                 
                 return (
                   <motion.div
@@ -552,17 +694,19 @@ export default function BenefitsPage() {
                     onClick={() => setExpandedBenefit(isExpanded ? null : benefit.id)}
                     className={`group relative cursor-pointer rounded-2xl border transition-all ${
                       isUnlocked
-                        ? 'bg-gradient-to-br from-[#1d1d1f] to-[#2a2a2f] border-white/10 hover:border-white/20'
+                        ? `bg-gradient-to-br from-[#1d1d1f] to-[#2a2a2f] ${borderColorClass}`
                         : 'bg-white/[0.02] border-white/5'
-                    } ${isExpanded ? 'ring-2 ring-[#0071e3]' : ''}`}
+                    } ${ringColorClass}`}
                   >
                     {/* Status Badge */}
-                    <div className={`absolute top-4 right-4 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <div className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
                       isUnlocked 
                         ? 'bg-[#34c759]/20 text-[#34c759]' 
                         : 'bg-white/5 text-white/30'
                     }`}>
                       {isUnlocked ? 'Active' : benefit.tiers[0]}
+                      </div>
                     </div>
 
                     <div className="p-6">
@@ -570,7 +714,11 @@ export default function BenefitsPage() {
                       <div className="flex items-start gap-4 mb-4">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
                           isUnlocked 
-                            ? 'bg-gradient-to-br from-[#0071e3]/20 to-[#5856d6]/20 text-[#0071e3]' 
+                            ? categoryColor.iconBg === 'from-[#0071e3]/20 to-[#0077ed]/20' ? 'bg-gradient-to-br from-[#0071e3]/20 to-[#0077ed]/20 text-[#0071e3]'
+                            : categoryColor.iconBg === 'from-[#5856d6]/20 to-[#af52de]/20' ? 'bg-gradient-to-br from-[#5856d6]/20 to-[#af52de]/20 text-[#5856d6]'
+                            : categoryColor.iconBg === 'from-[#34c759]/20 to-[#30d158]/20' ? 'bg-gradient-to-br from-[#34c759]/20 to-[#30d158]/20 text-[#34c759]'
+                            : categoryColor.iconBg === 'from-[#ff9500]/20 to-[#ffad33]/20' ? 'bg-gradient-to-br from-[#ff9500]/20 to-[#ffad33]/20 text-[#ff9500]'
+                            : 'bg-gradient-to-br from-[#af52de]/20 to-[#c969f0]/20 text-[#af52de]'
                             : 'bg-white/5 text-white/30'
                         }`}>
                           {benefit.icon}
@@ -588,7 +736,13 @@ export default function BenefitsPage() {
                       {/* Limit Badge */}
                       {benefit.limit && isUnlocked && (
                         <div className="mb-4">
-                          <span className="inline-block px-3 py-1 bg-[#0071e3]/10 text-[#0071e3] text-xs font-medium rounded-full">
+                          <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${
+                            categoryColor.iconColor === 'text-[#0071e3]' ? 'bg-[#0071e3]/10 text-[#0071e3]'
+                            : categoryColor.iconColor === 'text-[#5856d6]' ? 'bg-[#5856d6]/10 text-[#5856d6]'
+                            : categoryColor.iconColor === 'text-[#34c759]' ? 'bg-[#34c759]/10 text-[#34c759]'
+                            : categoryColor.iconColor === 'text-[#ff9500]' ? 'bg-[#ff9500]/10 text-[#ff9500]'
+                            : 'bg-[#af52de]/10 text-[#af52de]'
+                          }`}>
                             {benefit.limit[tier as keyof typeof benefit.limit]}
                           </span>
                         </div>
@@ -628,7 +782,13 @@ export default function BenefitsPage() {
                             <a
                               href={benefit.claimAction}
                               onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0071e3] text-white text-sm font-medium rounded-full hover:bg-[#0077ed] transition-colors"
+                              className={`inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-full transition-colors ${
+                                categoryColor.button === 'bg-[#0071e3] hover:bg-[#0077ed]' ? 'bg-[#0071e3] hover:bg-[#0077ed]'
+                                : categoryColor.button === 'bg-[#5856d6] hover:bg-[#6b69e8]' ? 'bg-[#5856d6] hover:bg-[#6b69e8]'
+                                : categoryColor.button === 'bg-[#34c759] hover:bg-[#30d158]' ? 'bg-[#34c759] hover:bg-[#30d158]'
+                                : categoryColor.button === 'bg-[#ff9500] hover:bg-[#ffad33]' ? 'bg-[#ff9500] hover:bg-[#ffad33]'
+                                : 'bg-[#af52de] hover:bg-[#c969f0]'
+                              }`}
                             >
                               {benefit.claimLabel}
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -639,7 +799,13 @@ export default function BenefitsPage() {
                             <Link
                               href={benefit.claimAction}
                               onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0071e3] text-white text-sm font-medium rounded-full hover:bg-[#0077ed] transition-colors"
+                              className={`inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-medium rounded-full transition-colors ${
+                                categoryColor.button === 'bg-[#0071e3] hover:bg-[#0077ed]' ? 'bg-[#0071e3] hover:bg-[#0077ed]'
+                                : categoryColor.button === 'bg-[#5856d6] hover:bg-[#6b69e8]' ? 'bg-[#5856d6] hover:bg-[#6b69e8]'
+                                : categoryColor.button === 'bg-[#34c759] hover:bg-[#30d158]' ? 'bg-[#34c759] hover:bg-[#30d158]'
+                                : categoryColor.button === 'bg-[#ff9500] hover:bg-[#ffad33]' ? 'bg-[#ff9500] hover:bg-[#ffad33]'
+                                : 'bg-[#af52de] hover:bg-[#c969f0]'
+                              }`}
                             >
                               {benefit.claimLabel}
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -664,7 +830,24 @@ export default function BenefitsPage() {
 
                     {/* Hover Glow */}
                     {isUnlocked && (
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#0071e3]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                      <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${
+                        categoryColor.hoverGlow === 'from-[#0071e3]/10' ? 'from-[#0071e3]/10'
+                        : categoryColor.hoverGlow === 'from-[#5856d6]/10' ? 'from-[#5856d6]/10'
+                        : categoryColor.hoverGlow === 'from-[#34c759]/10' ? 'from-[#34c759]/10'
+                        : categoryColor.hoverGlow === 'from-[#ff9500]/10' ? 'from-[#ff9500]/10'
+                        : 'from-[#af52de]/10'
+                      }`} />
+                    )}
+                    
+                    {/* Category Accent Bar */}
+                    {isUnlocked && (
+                      <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-2xl bg-gradient-to-r ${
+                        categoryColor.iconBg === 'from-[#0071e3]/20 to-[#0077ed]/20' ? 'from-[#0071e3] to-[#0077ed]'
+                        : categoryColor.iconBg === 'from-[#5856d6]/20 to-[#af52de]/20' ? 'from-[#5856d6] to-[#af52de]'
+                        : categoryColor.iconBg === 'from-[#34c759]/20 to-[#30d158]/20' ? 'from-[#34c759] to-[#30d158]'
+                        : categoryColor.iconBg === 'from-[#ff9500]/20 to-[#ffad33]/20' ? 'from-[#ff9500] to-[#ffad33]'
+                        : 'from-[#af52de] to-[#c969f0]'
+                      }`} />
                     )}
                   </motion.div>
                 );
@@ -673,7 +856,7 @@ export default function BenefitsPage() {
           </div>
 
           {/* Upgrade CTA */}
-          {tier !== 'pro' && (
+          {!isOwner && tier !== 'pro' && (
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}

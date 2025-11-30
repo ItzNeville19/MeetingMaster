@@ -30,6 +30,8 @@ export default function TeamPage() {
   // Get subscription from Clerk user metadata
   const subscription = user?.publicMetadata?.subscription as {
     tier?: string;
+    isOwner?: boolean; 
+    isDev?: boolean;
   } | undefined;
   const teamData = user?.publicMetadata?.team as {
     members?: TeamMember[];
@@ -37,6 +39,7 @@ export default function TeamPage() {
   } | undefined;
 
   const tier = subscription?.tier || 'free';
+  const isOwner = subscription?.isOwner || subscription?.isDev;
 
   const teamLimits: Record<string, number> = {
     free: 1,
@@ -45,8 +48,8 @@ export default function TeamPage() {
     pro: Infinity,
   };
 
-  const maxMembers = teamLimits[tier] || 1;
-  const canInvite = tier === 'growth' || tier === 'pro';
+  const maxMembers = isOwner ? Infinity : (teamLimits[tier] || 1);
+  const canInvite = isOwner || tier === 'growth' || tier === 'pro';
 
   // Load team data
   useEffect(() => {

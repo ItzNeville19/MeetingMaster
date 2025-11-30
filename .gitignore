@@ -47,3 +47,6 @@ firebase-debug.log
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# Privacy agreements (legal records - DO NOT COMMIT)
+/meeting-master-agreements/

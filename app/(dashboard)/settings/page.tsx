@@ -667,20 +667,31 @@ export default function SettingsPage() {
                       </svg>
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-4">Multi-Location Support</h2>
-                    <p className="text-white/60 mb-8">Track compliance separately for each business location. Upgrade to Growth or Pro.</p>
+                    <p className="text-white/60 mb-4">
+                      Track compliance separately for each business location. Perfect for businesses with multiple offices, stores, or facilities.
+                    </p>
+                    <p className="text-white/50 text-sm mb-8">
+                      Each location can have its own compliance reports, risk assessments, and action plans. Compare compliance across locations and identify patterns.
+                    </p>
                     <Link href="/pricing" className="px-8 py-4 bg-[#0071e3] text-white rounded-full font-semibold hover:bg-[#0077ed] transition-colors inline-block">
                       Upgrade to Unlock
                     </Link>
                   </div>
                 ) : (
                   <div className="bg-[#1d1d1f] rounded-3xl border border-white/10 p-8">
-                    <div className="flex items-center justify-between mb-6">
-                      <div>
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-2">
                         <h2 className="text-xl font-semibold text-white">Business Locations</h2>
-                        <p className="text-white/50 text-sm mt-1">
+                        <p className="text-white/50 text-sm">
                           {locations.length}/{locationLimit === Infinity ? '∞' : locationLimit} locations
                         </p>
                       </div>
+                      <p className="text-white/50 text-sm">
+                        Manage multiple business locations. Each location can have separate compliance tracking and reports.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between mb-6">
+                      <div></div>
                       {(locationLimit === Infinity || locations.length < locationLimit) && (
                         <button
                           onClick={() => setShowAddLocation(true)}

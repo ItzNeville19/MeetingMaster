@@ -28,6 +28,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // CRITICAL: Check privacy agreement before allowing payment
+    try {
+      const agreementRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/get-privacy-agreements`, {
+        headers: {
+          'Cookie': request.headers.get('cookie') || '',
+        },
+      });
+      
+      if (agreementRes.ok) {
+        const agreementData = await agreementRes.json();
+        const hasAgreed = agreementData.agreements && agreementData.agreements.length > 0 && 
+          agreementData.agreements.some((a: any) => a.agreed === true);
+        
+        if (!hasAgreed) {
+          return NextResponse.json(
+            { error: 'Privacy agreement required', message: 'You must agree to the Privacy Policy and Terms of Service before subscribing.' },
+            { status: 403 }
+          );
+        }
+      }
+    } catch (e) {
+      console.warn('[Checkout] Error checking privacy agreement:', e);
+      // Continue anyway - don't block payment if check fails
+    }
+
     const user = await currentUser();
     const body = await request.json();
     const { plan, interval } = body;

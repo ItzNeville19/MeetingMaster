@@ -30,17 +30,86 @@ export default function ReportsPage() {
       fetchReports();
     }
   }, [isLoaded, user]);
+  
+  // Refresh reports when page becomes visible (e.g., navigating back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isLoaded && user) {
+        console.log('[Reports] Page visible, refreshing reports...');
+        fetchReports();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [isLoaded, user]);
 
   const fetchReports = async () => {
     setLoading(true);
     try {
+      // Load from local storage first
+      let localReports: Report[] = [];
+      if (user?.id) {
+        try {
+          const localData = localStorage.getItem(`lifeos_reports_${user.id}`);
+          if (localData) {
+            localReports = JSON.parse(localData);
+          }
+        } catch (e) {
+          console.warn('Error loading local reports:', e);
+        }
+      }
+      
+      // Fetch from API (Supabase primary, Firestore backup)
       const res = await fetch('/api/get-reports');
+      let firestoreReports: Report[] = [];
       if (res.ok) {
         const data = await res.json();
-        setReports(data.reports || []);
+        firestoreReports = data.reports || [];
+        
+        // Save to local storage
+        if (user?.id && firestoreReports.length > 0) {
+          try {
+            localStorage.setItem(`lifeos_reports_${user.id}`, JSON.stringify(firestoreReports));
+          } catch (e) {
+            console.warn('Error saving to local storage:', e);
+          }
+        }
       }
+      
+      // Merge reports (Firestore takes priority)
+      const reportMap = new Map<string, Report>();
+      firestoreReports.forEach(r => {
+        if (r.id) reportMap.set(r.id, r);
+      });
+      localReports.forEach(r => {
+        if (r.id && !reportMap.has(r.id)) {
+          reportMap.set(r.id, r);
+        }
+      });
+      
+      const merged = Array.from(reportMap.values())
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      setReports(merged);
     } catch (err) {
       console.error('Failed to fetch reports:', err);
+      // On error, try local storage
+      if (user?.id) {
+        try {
+          const localData = localStorage.getItem(`lifeos_reports_${user.id}`);
+          if (localData) {
+            setReports(JSON.parse(localData));
+          }
+        } catch (e) {
+          console.error('Failed to load from local storage:', e);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -85,7 +154,7 @@ export default function ReportsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <Link href="/dashboard" className="inline-flex items-center gap-2 text-[#0071e3] hover:text-[#0077ed] mb-6">
+            <Link href="/dashboard" className="inline-flex items-center gap-2 text-[#0071e3] hover:text-[#0077ed] mb-6 transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
@@ -94,7 +163,10 @@ export default function ReportsPage() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h1 className="text-[36px] font-semibold text-white mb-2">All Reports</h1>
-                <p className="text-white/50">{reports.length} compliance reports analyzed</p>
+                <p className="text-white/50">
+                  {reports.length} {reports.length === 1 ? 'compliance report' : 'compliance reports'} 
+                  {loading ? ' (loading...)' : ''}
+                </p>
               </div>
               <Link
                 href="/dashboard"

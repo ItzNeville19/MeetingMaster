@@ -8,9 +8,14 @@ import { useUser } from '@clerk/nextjs';
 export default function SLAPage() {
   const { user, isLoaded } = useUser();
 
-  const subscription = user?.publicMetadata?.subscription as { tier?: string } | undefined;
+  const subscription = user?.publicMetadata?.subscription as { 
+    tier?: string; 
+    isOwner?: boolean; 
+    isDev?: boolean;
+  } | undefined;
   const tier = subscription?.tier || 'free';
-  const hasAccess = tier === 'pro';
+  const isOwner = subscription?.isOwner || subscription?.isDev;
+  const hasAccess = isOwner || tier === 'pro';
 
   if (!isLoaded) {
     return (

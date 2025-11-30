@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { adminStorage } from '@/lib/firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
 
-// Allowed file types
+// Allowed file types (OpenAI Vision only supports images)
 const ALLOWED_TYPES = [
-  'application/pdf',
   'image/png',
   'image/jpeg',
   'image/jpg',
   'image/webp',
+  'image/gif',
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -39,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Invalid file type. Allowed: PDF, PNG, JPG, WEBP' },
+        { error: 'Invalid file type. Allowed: PNG, JPG, WEBP, GIF. PDF files are not supported - please convert to an image format first.' },
         { status: 400 }
       );
     }
@@ -52,46 +51,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique filename
-    const fileExtension = file.name.split('.').pop() || 'pdf';
+    // Generate unique file ID
     const uniqueId = uuidv4();
-    const fileName = `${uniqueId}.${fileExtension}`;
-    const filePath = `uploads/${userId}/${fileName}`;
 
-    // Convert file to buffer
+    // Convert file to base64 data URL for processing
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
-    // Upload to Firebase Storage
-    const bucket = adminStorage().bucket();
-    const fileRef = bucket.file(filePath);
-
-    await fileRef.save(buffer, {
-      metadata: {
-        contentType: file.type,
-        metadata: {
-          originalName: file.name,
-          uploadedBy: userId,
-          uploadedAt: new Date().toISOString(),
-        },
-      },
-    });
-
-    // Make file publicly accessible (or use signed URLs)
-    await fileRef.makePublic();
-
-    // Get public URL
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+    const base64 = buffer.toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
     return NextResponse.json({
       success: true,
       file: {
         id: uniqueId,
         name: file.name,
-        url: publicUrl,
+        url: dataUrl, // Using data URL instead of Firebase Storage
         type: file.type,
         size: file.size,
-        path: filePath,
       },
     });
   } catch (error) {
