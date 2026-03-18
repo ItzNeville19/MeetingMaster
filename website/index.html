@@ -94,9 +94,11 @@
     #logos{padding:60px 0;border-top:1px solid var(--b);border-bottom:1px solid var(--b)}
     .lw{max-width:1200px;margin:0 auto;padding:0 48px}
     .ll{text-align:center;font-size:11px;font-weight:300;letter-spacing:.1em;text-transform:uppercase;color:var(--d);margin-bottom:40px}
-    .lr{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
-    .lc{padding:10px 22px;border:1px solid rgba(255,255,255,0.12);border-radius:4px;font-size:13px;font-weight:400;color:rgba(255,255,255,0.3);letter-spacing:.04em;transition:all .2s;cursor:default;white-space:nowrap}
-    .lc:hover{color:rgba(255,255,255,0.6);border-color:rgba(255,255,255,0.25)}
+    .lr{display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap;row-gap:28px}
+    .li{display:flex;align-items:center;gap:10px;opacity:.28;transition:opacity .2s;cursor:default;color:#fff;white-space:nowrap}
+    .li:hover{opacity:.68}
+    .li img{height:26px;width:26px;filter:grayscale(100%) brightness(0) invert(1);border-radius:4px;object-fit:contain;flex-shrink:0;display:block}
+    .li-wm{font-size:14px;font-weight:300;letter-spacing:.02em}
 
     /* SECTIONS */
     .sec{padding:120px 0;border-bottom:1px solid var(--b)}
@@ -286,13 +288,13 @@
   <div class="lw">
     <p class="ll">Targeting teams at</p>
     <div class="lr">
-      <div class="lc">JPMorgan Chase</div>
-      <div class="lc">UBS</div>
-      <div class="lc">Goldman Sachs</div>
-      <div class="lc">HSBC</div>
-      <div class="lc">Morgan Stanley</div>
-      <div class="lc">OpenAI</div>
-      <div class="lc">Anthropic</div>
+      <div class="li"><img src="https://logo.clearbit.com/openai.com" alt="OpenAI" loading="lazy"/><span class="li-wm">OpenAI</span></div>
+      <div class="li"><img src="https://logo.clearbit.com/anthropic.com" alt="Anthropic" loading="lazy"/><span class="li-wm">Anthropic</span></div>
+      <div class="li"><img src="https://logo.clearbit.com/jpmorgan.com" alt="JPMorgan Chase" loading="lazy"/><span class="li-wm">JPMorgan Chase</span></div>
+      <div class="li"><img src="https://logo.clearbit.com/goldmansachs.com" alt="Goldman Sachs" loading="lazy"/><span class="li-wm">Goldman Sachs</span></div>
+      <div class="li"><img src="https://logo.clearbit.com/ubs.com" alt="UBS" loading="lazy"/><span class="li-wm">UBS</span></div>
+      <div class="li"><img src="https://logo.clearbit.com/hsbc.com" alt="HSBC" loading="lazy"/><span class="li-wm">HSBC</span></div>
+      <div class="li"><img src="https://logo.clearbit.com/morganstanley.com" alt="Morgan Stanley" loading="lazy"/><span class="li-wm">Morgan Stanley</span></div>
     </div>
   </div>
 </section>
