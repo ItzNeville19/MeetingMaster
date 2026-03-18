@@ -3,831 +3,417 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Route5 — AI execution layer for enterprise systems</title>
-  <meta name="description" content="Route5 connects AI agents to legacy Java, .NET, and COBOL systems—extracting real business capabilities and exposing them as MCP tools. No production code changes." />
+  <title>Route5 — AI execution layer for enterprise</title>
+  <meta name="description" content="Route5 connects AI agents to legacy enterprise systems. No code changes. Results in weeks." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:       #111111;
-      --bg2:      #161616;
-      --border:   rgba(255,255,255,0.1);
-      --text:     #FFFFFF;
-      --sub:      rgba(255,255,255,0.55);
-      --dim:      rgba(255,255,255,0.25);
-      --green:    #19a26c;
-      --green-h:  #15895c;
-    }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      font-size: 16px;
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
-    }
-
-    a { color: inherit; text-decoration: none; }
-    button { font-family: inherit; }
-
-    /* ── ANNOUNCE BAR ── */
-    #bar {
-      background: #1a1a1a;
-      border-bottom: 1px solid var(--border);
-      padding: 9px 24px;
-      text-align: center;
-      font-size: 13px;
-      color: var(--sub);
-      position: relative;
-      z-index: 200;
-      transition: height 0.3s, padding 0.3s, opacity 0.3s;
-    }
-    #bar.hidden { height: 0; padding: 0; opacity: 0; overflow: hidden; pointer-events: none; }
-    #bar a { color: #fff; border-bottom: 1px solid rgba(255,255,255,0.3); transition: border-color 0.15s; }
-    #bar a:hover { border-color: rgba(255,255,255,0.7); }
-    #bar-close {
-      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-      background: none; border: none; color: var(--dim); cursor: pointer;
-      font-size: 18px; line-height: 1; padding: 4px 8px; transition: color 0.15s;
-    }
-    #bar-close:hover { color: var(--text); }
-
-    /* ── NAV ── */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(17,17,17,0.94);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-    }
-    .nav-inner {
-      display: flex; align-items: center; justify-content: space-between;
-      max-width: 1280px; margin: 0 auto; padding: 0 40px; height: 64px;
-    }
-    .logo { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 500; letter-spacing: -0.02em; }
-    .nav-links { display: flex; align-items: center; gap: 36px; list-style: none; }
-    .nav-links a { font-size: 14px; color: var(--sub); transition: color 0.15s; }
-    .nav-links a:hover, .nav-links a.active { color: #fff; }
-    .nav-right { display: flex; align-items: center; gap: 20px; }
-    .nav-login { font-size: 14px; color: var(--sub); cursor: pointer; background: none; border: none; transition: color 0.15s; }
-    .nav-login:hover { color: #fff; }
-    .btn-green {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 9px 20px; border-radius: 6px; background: var(--green); color: #fff;
-      font-size: 14px; font-weight: 500; transition: background 0.15s; cursor: pointer; border: none;
-    }
-    .btn-green:hover { background: var(--green-h); }
-    .hamburger {
-      display: none; flex-direction: column; gap: 5px; cursor: pointer;
-      background: none; border: none; padding: 4px;
-    }
-    .hamburger span { display: block; width: 22px; height: 1.5px; background: #fff; transition: all 0.25s; transform-origin: center; }
-    .hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
-    .hamburger.open span:nth-child(2) { opacity: 0; }
-    .hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
-
-    /* ── MOBILE MENU ── */
-    .mobile-menu {
-      display: none; position: fixed; inset: 0; background: var(--bg); z-index: 90;
-      flex-direction: column; padding: 100px 40px 40px; gap: 0; overflow-y: auto;
-    }
-    .mobile-menu.open { display: flex; }
-    .mobile-menu a, .mobile-menu button.m-link {
-      display: block; font-size: 26px; font-weight: 400; padding: 16px 0;
-      border: none; background: none; text-align: left; width: 100%;
-      border-bottom: 1px solid var(--border); color: var(--sub); transition: color 0.15s; cursor: pointer;
-    }
-    .mobile-menu a:hover, .mobile-menu button.m-link:hover { color: #fff; }
-    .m-cta { margin-top: 32px; }
-    .m-cta .btn-green { font-size: 15px; padding: 12px 28px; }
-
-    /* ── MODAL ── */
-    .modal-backdrop {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
-      backdrop-filter: blur(8px); z-index: 300; align-items: center; justify-content: center; padding: 24px;
-    }
-    .modal-backdrop.open { display: flex; }
-    .modal {
-      background: #1a1a1a; border: 1px solid var(--border); border-radius: 12px;
-      padding: 40px; max-width: 420px; width: 100%; position: relative;
-      animation: modal-in 0.2s ease;
-    }
-    @keyframes modal-in { from { opacity: 0; transform: scale(0.97) translateY(8px); } to { opacity: 1; transform: none; } }
-    .modal-close {
-      position: absolute; top: 16px; right: 16px; background: none; border: none;
-      color: var(--dim); font-size: 22px; cursor: pointer; line-height: 1; padding: 4px 8px;
-      transition: color 0.15s;
-    }
-    .modal-close:hover { color: #fff; }
-    .modal h3 { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 12px; }
-    .modal p { font-size: 15px; color: var(--sub); line-height: 1.7; margin-bottom: 24px; }
-    .modal .btn-green { width: 100%; justify-content: center; padding: 12px; font-size: 15px; }
-    .modal-or { text-align: center; font-size: 13px; color: var(--dim); margin: 14px 0; }
-    .modal-email { display: block; text-align: center; font-size: 14px; color: var(--sub); border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 2px; transition: color 0.15s; }
-    .modal-email:hover { color: #fff; }
-
-    /* ── HERO ── */
-    #hero {
-      position: relative; min-height: calc(100vh - 64px);
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: flex-end; padding-bottom: 80px; overflow: hidden;
-    }
-    .hero-bg {
-      position: absolute; inset: 0;
-      background-image: url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1800&q=80');
-      background-size: cover; background-position: center 30%; z-index: 0;
-    }
-    .hero-bg::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(to bottom, rgba(17,17,17,1) 0%, rgba(17,17,17,0.68) 40%, rgba(17,17,17,0.28) 70%, rgba(17,17,17,0.52) 100%);
-    }
-    .hero-content { position: relative; z-index: 1; text-align: center; max-width: 860px; padding: 0 24px; }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 8px;
-      border-radius: 99px; background: rgba(25,162,108,0.15); border: 1px solid rgba(25,162,108,0.35);
-      font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-      color: #4fd6a0; margin-bottom: 36px;
-    }
-    .badge-pill { background: var(--green); color: #fff; padding: 2px 8px; border-radius: 99px; font-size: 10px; letter-spacing: 0.06em; }
-    .badge-dot { width: 5px; height: 5px; border-radius: 50%; background: #4fd6a0; animation: blink 2.5s ease-in-out infinite; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .hero-h1 {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: clamp(44px, 7vw, 88px); font-weight: 400; font-style: italic;
-      line-height: 1.06; letter-spacing: -0.02em; color: #fff; margin-bottom: 24px;
-    }
-    .hero-sub { font-size: clamp(15px, 1.5vw, 17px); color: var(--sub); max-width: 520px; margin: 0 auto; line-height: 1.7; }
-
-    /* ── EDITORIAL ── */
-    #editorial { position: relative; width: 100%; height: 60vw; max-height: 680px; min-height: 360px; overflow: hidden; }
-    .editorial-img { width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block; filter: grayscale(15%) brightness(0.7); }
-    .editorial-caption { position: absolute; bottom: 40px; left: 48px; font-size: 11px; color: rgba(255,255,255,0.35); letter-spacing: 0.08em; text-transform: uppercase; }
-
-    /* ── TRUSTED ── */
-    #trusted { padding: 80px 0; border-bottom: 1px solid var(--border); }
-    .trusted-inner { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
-    .trusted-label { text-align: center; font-size: 13px; color: var(--dim); margin-bottom: 48px; }
-    .trusted-logos { display: flex; align-items: center; justify-content: center; gap: 64px; flex-wrap: wrap; }
-    .trusted-logos span { font-size: 16px; font-weight: 400; color: rgba(255,255,255,0.28); letter-spacing: 0.04em; transition: color 0.2s; cursor: default; }
-    .trusted-logos span:hover { color: rgba(255,255,255,0.55); }
-
-    /* ── SHARED ── */
-    .wrap { max-width: 1280px; margin: 0 auto; padding: 0 40px; }
-    .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); margin-bottom: 24px; }
-    .serif-h2 { font-family: 'Playfair Display', serif; font-size: clamp(32px, 4vw, 52px); font-weight: 400; font-style: italic; line-height: 1.12; letter-spacing: -0.015em; }
-
-    /* ── STATEMENT ── */
-    #statement { padding: 120px 0; border-bottom: 1px solid var(--border); }
-    .statement-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
-    .statement-body { font-size: 17px; color: var(--sub); line-height: 1.8; padding-top: 8px; }
-    .statement-body strong { color: #fff; font-weight: 500; }
-
-    /* ── HOW IT WORKS ── */
-    #how { padding: 120px 0; border-bottom: 1px solid var(--border); }
-    .how-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; margin-bottom: 72px; flex-wrap: wrap; }
-    .how-note { max-width: 300px; font-size: 14px; color: var(--sub); line-height: 1.7; }
-    .steps { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    .step { padding: 44px 36px; border-right: 1px solid var(--border); }
-    .step:nth-child(3n) { border-right: none; }
-    .step:nth-child(n+4) { border-top: 1px solid var(--border); }
-    .step-n { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: var(--dim); margin-bottom: 24px; }
-    .step h3 { font-size: 15px; font-weight: 500; margin-bottom: 12px; letter-spacing: -0.01em; }
-    .step p { font-size: 14px; color: var(--sub); line-height: 1.7; }
-
-    /* ── PLATFORM ── */
-    #platform { padding: 120px 0; border-bottom: 1px solid var(--border); background: var(--bg2); }
-    .platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 64px; }
-    .platform-card { background: var(--bg2); padding: 40px 36px; transition: background 0.2s; }
-    .platform-card:hover { background: #1e1e1e; }
-    .platform-icon { width: 36px; height: 36px; border-radius: 8px; background: rgba(25,162,108,0.1); border: 1px solid rgba(25,162,108,0.2); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; color: var(--green); }
-    .platform-card h3 { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; margin-bottom: 10px; }
-    .platform-card p { font-size: 13px; color: var(--sub); line-height: 1.7; }
-
-    /* ── METRICS ── */
-    #metrics { padding: 120px 0; border-bottom: 1px solid var(--border); }
-    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 64px; }
-    .metric { padding: 48px 36px; border-right: 1px solid var(--border); }
-    .metric:last-child { border-right: none; }
-    .metric-num { font-family: 'Playfair Display', serif; font-size: 54px; font-weight: 400; font-style: italic; line-height: 1; letter-spacing: -0.02em; }
-    .metric-num em { color: var(--green); font-style: italic; }
-    .metric-label { margin-top: 14px; font-size: 13px; color: var(--sub); line-height: 1.6; }
-
-    /* ── CONTACT ── */
-    #contact { padding: 120px 0; border-bottom: 1px solid var(--border); }
-    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 100px; align-items: start; }
-    .contact-sub { font-size: 16px; color: var(--sub); line-height: 1.75; margin-top: 24px; }
-    .contact-note { margin-top: 32px; font-size: 13px; color: var(--dim); line-height: 1.6; }
-
-    /* Form */
-    .form { display: flex; flex-direction: column; gap: 16px; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .form-group { display: flex; flex-direction: column; gap: 7px; }
-    .form-group label { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; color: var(--sub); }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-      border-radius: 6px; padding: 11px 14px; font-size: 14px; color: #fff;
-      font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.15s, background 0.15s; width: 100%;
-    }
-    .form-group input::placeholder, .form-group textarea::placeholder { color: var(--dim); }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-      border-color: rgba(25,162,108,0.55); background: rgba(255,255,255,0.06);
-    }
-    .form-group select option { background: #222; }
-    .form-group textarea { resize: vertical; min-height: 100px; }
-    .form-error { display: none; font-size: 12px; color: #f87171; margin-top: 2px; }
-    .form-group.err input, .form-group.err select, .form-group.err textarea { border-color: rgba(248,113,113,0.5); }
-    .form-group.err .form-error { display: block; }
-    .form-submit {
-      width: 100%; padding: 13px; border-radius: 6px; background: var(--green); color: #fff;
-      font-size: 15px; font-weight: 500; font-family: 'Inter', sans-serif; border: none; cursor: pointer; transition: background 0.15s;
-    }
-    .form-submit:hover { background: var(--green-h); }
-    .form-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-    .form-note { font-size: 12px; color: var(--dim); text-align: center; margin-top: 4px; }
-    .form-success { display: none; text-align: center; padding: 48px 24px; }
-    .form-success.show { display: block; }
-    .form-success h3 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 28px; margin-bottom: 12px; }
-    .form-success p { color: var(--sub); font-size: 15px; }
-    .form-err-global { display: none; font-size: 13px; color: #f87171; text-align: center; padding: 10px; background: rgba(248,113,113,0.08); border-radius: 6px; margin-top: 4px; }
-    .form-err-global.show { display: block; }
-
-    /* ── FOOTER ── */
-    footer { padding: 56px 0; }
-    .footer-inner { display: grid; grid-template-columns: 1fr auto auto auto; align-items: start; gap: 48px; }
-    .footer-brand p { font-size: 13px; color: var(--sub); margin-top: 12px; max-width: 240px; line-height: 1.6; }
-    .footer-col h4 { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-bottom: 16px; }
-    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-    .footer-col ul a, .footer-col ul button {
-      font-size: 14px; color: var(--sub); background: none; border: none; cursor: pointer;
-      text-align: left; font-family: inherit; padding: 0; transition: color 0.15s;
-    }
-    .footer-col ul a:hover, .footer-col ul button:hover { color: #fff; }
-    .footer-bottom {
-      border-top: 1px solid var(--border); margin-top: 32px; padding-top: 24px;
-      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
-    }
-    .footer-bottom span { font-size: 13px; color: var(--dim); }
-    .footer-bottom a { font-size: 13px; color: var(--dim); transition: color 0.15s; }
-    .footer-bottom a:hover { color: var(--sub); }
-
-    /* ── FADE ── */
-    .fade-up { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
-    .fade-up.in { opacity: 1; transform: none; }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 960px) {
-      .statement-grid { grid-template-columns: 1fr; gap: 40px; }
-      .contact-grid { grid-template-columns: 1fr; gap: 56px; }
-      .footer-inner { grid-template-columns: 1fr 1fr; }
-      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-      .metric:nth-child(2) { border-right: none; }
-      .metric:nth-child(3) { border-top: 1px solid var(--border); }
-      .platform-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 720px) {
-      .nav-links, .nav-login { display: none !important; }
-      .hamburger { display: flex; }
-      .steps { grid-template-columns: 1fr; }
-      .step { border-right: none !important; border-bottom: 1px solid var(--border); }
-      .step:last-child { border-bottom: none; }
-      .step:nth-child(n+4) { border-top: none; }
-      .how-top { flex-direction: column; align-items: flex-start; }
-      .platform-grid { grid-template-columns: 1fr; }
-      .metrics-grid { grid-template-columns: 1fr 1fr; }
-      .form-row { grid-template-columns: 1fr; }
-      .footer-inner { grid-template-columns: 1fr; }
-      .wrap, .trusted-inner { padding: 0 24px; }
-      .nav-inner { padding: 0 20px; }
-      #statement, #how, #platform, #metrics, #contact { padding: 80px 0; }
-      .editorial-caption { left: 24px; bottom: 24px; }
-    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#000;--bg1:#0a0a0a;--bg2:#111;--b:rgba(255,255,255,0.08);--t:#fff;--s:rgba(255,255,255,0.45);--d:rgba(255,255,255,0.2);--g:#19a26c;--g2:#14875a}
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--t);font-family:'Outfit',sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    a{color:inherit;text-decoration:none}
+    button{font-family:inherit;cursor:pointer}
+    /* ANNOUNCE */
+    #bar{background:var(--bg1);border-bottom:1px solid var(--b);padding:9px 48px;text-align:center;font-size:13px;font-weight:300;color:var(--s);position:relative}
+    #bar.gone{display:none}
+    #bar a{color:var(--t);border-bottom:1px solid rgba(255,255,255,0.25)}
+    #bar a:hover{border-color:rgba(255,255,255,0.6)}
+    #bar-x{position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--d);font-size:18px;padding:4px 8px}
+    #bar-x:hover{color:var(--t)}
+    /* NAV */
+    nav{position:sticky;top:0;z-index:100;background:rgba(0,0,0,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--b)}
+    .ni{display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto;padding:0 48px;height:60px}
+    .logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:500;letter-spacing:0.01em}
+    .nl{display:flex;align-items:center;gap:32px;list-style:none}
+    .nl a{font-size:13px;font-weight:300;color:var(--s);transition:color .15s}
+    .nl a:hover,.nl a.on{color:var(--t)}
+    .nr{display:flex;align-items:center;gap:16px}
+    .nlog{font-size:13px;font-weight:300;color:var(--s);background:none;border:none;transition:color .15s}
+    .nlog:hover{color:var(--t)}
+    .btn{padding:8px 18px;border-radius:5px;border:none;font-family:'Outfit',sans-serif;font-size:13px;font-weight:400;transition:background .15s,border-color .15s,color .15s;cursor:pointer}
+    .bg{background:var(--g);color:#fff}.bg:hover{background:var(--g2)}
+    .bo{background:transparent;color:var(--s);border:1px solid var(--b)}.bo:hover{color:var(--t);border-color:rgba(255,255,255,0.22)}
+    .ham{display:none;flex-direction:column;gap:5px;background:none;border:none;padding:4px}
+    .ham span{display:block;width:20px;height:1px;background:var(--t);transition:all .2s;transform-origin:center}
+    .ham.open span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+    .ham.open span:nth-child(2){opacity:0}
+    .ham.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+    .mm{display:none;position:fixed;inset:0;background:var(--bg);z-index:90;flex-direction:column;padding:90px 40px 40px}
+    .mm.open{display:flex}
+    .mm a,.mm button.ml{display:block;font-size:24px;font-weight:300;padding:14px 0;border-bottom:1px solid var(--b);color:var(--s);background:none;border-left:none;border-right:none;border-top:none;text-align:left;width:100%;transition:color .15s}
+    .mm a:hover,.mm button.ml:hover{color:var(--t)}
+    .mm .mc{margin-top:28px}
+    /* MODAL */
+    .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);backdrop-filter:blur(8px);z-index:200;align-items:center;justify-content:center;padding:24px}
+    .ov.open{display:flex}
+    .mod{background:#111;border:1px solid var(--b);border-radius:10px;padding:40px;max-width:400px;width:100%;position:relative;animation:pop .18s ease}
+    @keyframes pop{from{opacity:0;transform:scale(0.96) translateY(6px)}to{opacity:1;transform:none}}
+    .mx{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--d);font-size:20px;padding:4px 8px;transition:color .15s}
+    .mx:hover{color:var(--t)}
+    .mod h3{font-size:20px;font-weight:500;margin-bottom:10px}
+    .mod p{font-size:14px;font-weight:300;color:var(--s);margin-bottom:22px;line-height:1.7}
+    .mod .btn{width:100%;padding:11px;font-size:14px;margin-bottom:12px}
+    .malt{display:block;text-align:center;font-size:13px;font-weight:300;color:var(--s);border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:2px}
+    .malt:hover{color:var(--t)}
+    /* HERO */
+    #hero{min-height:calc(100vh - 60px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 48px}
+    .hbadge{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 8px;border-radius:99px;background:rgba(25,162,108,0.1);border:1px solid rgba(25,162,108,0.25);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#3fcf8e;margin-bottom:40px}
+    .bdot{width:5px;height:5px;border-radius:50%;background:#3fcf8e;animation:blink 2s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .bpill{background:var(--g);color:#fff;padding:2px 8px;border-radius:99px;font-size:10px}
+    h1{font-size:clamp(40px,6.5vw,84px);font-weight:300;line-height:1.08;letter-spacing:-.025em;max-width:800px;margin-bottom:24px}
+    h1 strong{font-weight:500}
+    .hs{font-size:clamp(15px,1.4vw,18px);font-weight:300;color:var(--s);max-width:460px;line-height:1.65;margin-bottom:40px}
+    .hb{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+    .hb .btn{padding:11px 24px;font-size:14px}
+    /* LOGOS */
+    #logos{padding:64px 0;border-top:1px solid var(--b);border-bottom:1px solid var(--b)}
+    .lw{max-width:1200px;margin:0 auto;padding:0 48px}
+    .ll{text-align:center;font-size:11px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--d);margin-bottom:44px}
+    .lr{display:flex;align-items:center;justify-content:center;gap:48px;flex-wrap:wrap}
+    .bl{opacity:.28;transition:opacity .2s;filter:brightness(0) invert(1)}
+    .bl:hover{opacity:.55}
+    /* SECTIONS */
+    .sec{padding:120px 0;border-bottom:1px solid var(--b)}
+    .w{max-width:1200px;margin:0 auto;padding:0 48px}
+    .ey{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--g);margin-bottom:20px}
+    h2{font-size:clamp(28px,3.5vw,48px);font-weight:300;line-height:1.12;letter-spacing:-.02em}
+    h2 strong{font-weight:500}
+    /* STATEMENT */
+    .sg{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start}
+    .sb{font-size:16px;font-weight:300;color:var(--s);line-height:1.85;padding-top:6px}
+    .sb strong{color:var(--t);font-weight:400}
+    /* HOW */
+    .ht{display:flex;align-items:flex-end;justify-content:space-between;gap:48px;margin-bottom:64px;flex-wrap:wrap}
+    .hn{font-size:13px;font-weight:300;color:var(--s);max-width:280px;line-height:1.7}
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--b);border-radius:8px;overflow:hidden}
+    .step{padding:40px 32px;border-right:1px solid var(--b);transition:background .2s}
+    .step:hover{background:var(--bg1)}
+    .step:nth-child(3n){border-right:none}
+    .step:nth-child(n+4){border-top:1px solid var(--b)}
+    .sn{font-size:11px;font-weight:400;letter-spacing:.1em;color:var(--d);margin-bottom:20px}
+    .step h3{font-size:15px;font-weight:400;margin-bottom:10px;letter-spacing:-.01em}
+    .step p{font-size:13px;font-weight:300;color:var(--s);line-height:1.7}
+    /* PLATFORM */
+    #platform{background:var(--bg1)}
+    .pg{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--b);border:1px solid var(--b);border-radius:8px;overflow:hidden;margin-top:56px}
+    .pc{background:var(--bg1);padding:36px 32px;transition:background .2s}
+    .pc:hover{background:#141414}
+    .pi{width:32px;height:32px;border-radius:6px;background:rgba(25,162,108,0.08);border:1px solid rgba(25,162,108,0.18);display:flex;align-items:center;justify-content:center;margin-bottom:18px;color:var(--g)}
+    .pc h3{font-size:14px;font-weight:400;margin-bottom:8px;letter-spacing:-.01em}
+    .pc p{font-size:13px;font-weight:300;color:var(--s);line-height:1.7}
+    /* METRICS */
+    .mr{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--b);border-radius:8px;overflow:hidden;margin-top:56px}
+    .me{padding:44px 32px;border-right:1px solid var(--b)}
+    .me:last-child{border-right:none}
+    .mn{font-size:52px;font-weight:200;line-height:1;letter-spacing:-.03em}
+    .mn em{color:var(--g);font-style:normal;font-weight:300}
+    .ml{margin-top:12px;font-size:13px;font-weight:300;color:var(--s);line-height:1.55}
+    /* CONTACT */
+    .cg{display:grid;grid-template-columns:1fr 1fr;gap:96px;align-items:start}
+    .cl h2{margin-bottom:16px}
+    .cl p{font-size:15px;font-weight:300;color:var(--s);line-height:1.75;margin-bottom:12px}
+    .form{display:flex;flex-direction:column;gap:14px}
+    .fr{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .fg{display:flex;flex-direction:column;gap:6px}
+    .fg label{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--d)}
+    .fg input,.fg select,.fg textarea{background:rgba(255,255,255,0.03);border:1px solid var(--b);border-radius:5px;padding:10px 13px;font-size:14px;font-weight:300;color:var(--t);font-family:'Outfit',sans-serif;outline:none;transition:border-color .15s,background .15s;width:100%}
+    .fg input::placeholder,.fg textarea::placeholder{color:var(--d)}
+    .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:rgba(25,162,108,.45);background:rgba(255,255,255,.05)}
+    .fg select option{background:#1a1a1a}
+    .fg textarea{resize:vertical;min-height:90px}
+    .fe{display:none;font-size:11px;color:#f87171;margin-top:2px}
+    .fg.err input,.fg.err select,.fg.err textarea{border-color:rgba(248,113,113,.4)}
+    .fg.err .fe{display:block}
+    .fs{width:100%;padding:12px;border-radius:5px;background:var(--g);color:#fff;font-size:14px;font-weight:400;font-family:'Outfit',sans-serif;border:none;cursor:pointer;transition:background .15s}
+    .fs:hover{background:var(--g2)}
+    .fs:disabled{opacity:.5;cursor:not-allowed}
+    .fn2{font-size:11px;font-weight:300;color:var(--d);text-align:center}
+    .feg{display:none;font-size:12px;color:#f87171;background:rgba(248,113,113,.07);padding:10px;border-radius:5px;text-align:center}
+    .feg.show{display:block}
+    .fok{display:none;text-align:center;padding:48px 0}
+    .fok.show{display:block}
+    .fok h3{font-size:22px;font-weight:400;margin-bottom:10px}
+    .fok p{font-size:14px;font-weight:300;color:var(--s)}
+    /* FOOTER */
+    footer{padding:48px 0}
+    .fi{display:grid;grid-template-columns:1fr auto auto auto;align-items:start;gap:48px}
+    .fb p{font-size:13px;font-weight:300;color:var(--s);margin-top:10px;max-width:220px;line-height:1.6}
+    .fc h4{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--d);margin-bottom:14px}
+    .fc ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+    .fc ul a,.fc ul button{font-size:13px;font-weight:300;color:var(--s);background:none;border:none;padding:0;text-align:left;font-family:inherit;cursor:pointer;transition:color .15s}
+    .fc ul a:hover,.fc ul button:hover{color:var(--t)}
+    .fb2{border-top:1px solid var(--b);margin-top:32px;padding-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+    .fb2 span,.fb2 a{font-size:12px;font-weight:300;color:var(--d);transition:color .15s}
+    .fb2 a:hover{color:var(--s)}
+    /* FADE */
+    .fu{opacity:0;transform:translateY(20px);transition:opacity .55s ease,transform .55s ease}
+    .fu.in{opacity:1;transform:none}
+    /* RESPONSIVE */
+    @media(max-width:900px){.sg,.cg{grid-template-columns:1fr;gap:40px}.mr{grid-template-columns:1fr 1fr}.me:nth-child(2){border-right:none}.me:nth-child(3){border-top:1px solid var(--b)}.pg{grid-template-columns:1fr 1fr}.fi{grid-template-columns:1fr 1fr}}
+    @media(max-width:660px){.nl,.nlog{display:none!important}.ham{display:flex}.steps{grid-template-columns:1fr}.step{border-right:none!important;border-bottom:1px solid var(--b)}.step:last-child{border-bottom:none}.step:nth-child(n+4){border-top:none}.ht{flex-direction:column;align-items:flex-start}.pg{grid-template-columns:1fr}.mr{grid-template-columns:1fr 1fr}.fr{grid-template-columns:1fr}.fi{grid-template-columns:1fr}.w,.lw{padding:0 24px}.ni{padding:0 24px}#hero{padding:60px 24px}.sec{padding:80px 0}.lr{gap:28px}}
   </style>
 </head>
 <body>
 
-<!-- ANNOUNCE BAR -->
-<div id="bar">
-  InvokeAI V0 is live — read the product brief
-  <a href="#statement"> →</a>
-  <button id="bar-close" aria-label="Dismiss">×</button>
-</div>
+<div id="bar">InvokeAI V0 is live — <a href="#statement">read the brief</a><button id="bar-x" aria-label="Dismiss">×</button></div>
 
-<!-- NAV -->
 <nav>
-  <div class="nav-inner">
-    <a href="#" class="logo" aria-label="Route5 home">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <rect width="28" height="28" rx="6" fill="#1a1a1a"/>
-        <path d="M7 10h7a3.5 3.5 0 0 1 0 7H7" stroke="#19a26c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M7 17h4l4 5" stroke="#19a26c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M17.5 9h4L20 13.5a2.5 2.5 0 1 1-2 4" stroke="rgba(255,255,255,0.3)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <div class="ni">
+    <a href="#" class="logo" aria-label="Route5">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+        <rect width="30" height="30" rx="7" fill="#111"/>
+        <path d="M5 7h6.5a4 4 0 0 1 0 8H5V7z" stroke="#19a26c" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M5 15h3.5l4 7" stroke="#19a26c" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M17 7h7l-3.5 5" stroke="rgba(255,255,255,0.55)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M13.5 12h6.5a3.5 3.5 0 1 1 0 7h-3" stroke="rgba(255,255,255,0.55)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       route5
     </a>
-
-    <ul class="nav-links">
+    <ul class="nl">
       <li><a href="#statement">Product</a></li>
       <li><a href="#how">How it works</a></li>
       <li><a href="#platform">Platform</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
-
-    <div class="nav-right">
-      <button class="nav-login" onclick="openLoginModal()">Log In</button>
-      <button class="btn-green" onclick="scrollToContact()">Request Demo</button>
-      <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
+    <div class="nr">
+      <button class="nlog" onclick="openLogin()">Log In</button>
+      <button class="btn bg" onclick="goContact()">Request Demo</button>
+      <button class="ham" id="ham" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
     </div>
   </div>
 </nav>
 
-<!-- MOBILE MENU -->
-<div class="mobile-menu" id="mobile-menu" role="dialog" aria-label="Navigation menu">
-  <a href="#statement" class="m-link" onclick="closeMobileMenu()">Product</a>
-  <a href="#how" class="m-link" onclick="closeMobileMenu()">How it works</a>
-  <a href="#platform" class="m-link" onclick="closeMobileMenu()">Platform</a>
-  <a href="#contact" class="m-link" onclick="closeMobileMenu()">Contact</a>
-  <button class="m-link" onclick="openLoginModal(); closeMobileMenu()">Log In</button>
-  <div class="m-cta">
-    <button class="btn-green" onclick="scrollToContact(); closeMobileMenu()">Request Demo</button>
+<div class="mm" id="mm">
+  <a href="#statement" onclick="closeMenu()">Product</a>
+  <a href="#how" onclick="closeMenu()">How it works</a>
+  <a href="#platform" onclick="closeMenu()">Platform</a>
+  <a href="#contact" onclick="closeMenu()">Contact</a>
+  <button class="ml" onclick="openLogin();closeMenu()">Log In</button>
+  <div class="mc"><button class="btn bg" onclick="goContact();closeMenu()">Request Demo</button></div>
+</div>
+
+<div class="ov" id="lm">
+  <div class="mod">
+    <button class="mx" onclick="closeLogin()">×</button>
+    <h3>Log in</h3>
+    <p>The customer portal is coming soon. Request access or email us directly.</p>
+    <button class="btn bg" style="width:100%;padding:11px;font-size:14px;margin-bottom:12px" onclick="closeLogin();goContact()">Request demo access</button>
+    <a href="mailto:hello@route5.ai" class="malt">hello@route5.ai</a>
   </div>
 </div>
 
-<!-- LOGIN MODAL -->
-<div class="modal-backdrop" id="login-modal" role="dialog" aria-modal="true" aria-label="Log in">
-  <div class="modal">
-    <button class="modal-close" onclick="closeLoginModal()" aria-label="Close">×</button>
-    <h3>Welcome back</h3>
-    <p>Route5's customer portal is coming soon. In the meantime, reach us directly to get access.</p>
-    <button class="btn-green" onclick="closeLoginModal(); scrollToContact()">Request demo access</button>
-    <p class="modal-or">or email us directly</p>
-    <a href="mailto:hello@route5.ai" class="modal-email">hello@route5.ai</a>
-  </div>
-</div>
-
-<!-- HERO -->
 <section id="hero">
-  <div class="hero-bg" role="img" aria-label="City skyline background"></div>
-  <div class="hero-content">
-    <div class="hero-badge">
-      <span class="badge-pill">INVOKEAI</span>
-      <span class="badge-dot"></span>
-      Private Beta — Now Accepting Design Partners
-    </div>
-    <h1 class="hero-h1">
-      AI built for the most<br>complex systems in enterprise
-    </h1>
-    <p class="hero-sub">
-      Route5 is the AI execution layer for finance and enterprise. We unlock ROI from legacy systems—without touching a line of production code.
-    </p>
+  <div class="hbadge"><span class="bpill">INVOKEAI</span><span class="bdot"></span>Private Beta</div>
+  <h1>AI that operates inside<br><strong>legacy enterprise systems</strong></h1>
+  <p class="hs">Route5 extracts real business capabilities from Java, .NET, and COBOL — and exposes them as MCP tools. No code changes. No RPA.</p>
+  <div class="hb">
+    <button class="btn bg" onclick="goContact()">Request early access</button>
+    <a href="#how" class="btn bo">How it works</a>
   </div>
 </section>
 
-<!-- EDITORIAL IMAGE -->
-<section id="editorial" aria-label="Editorial image">
-  <img
-    class="editorial-img"
-    src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1800&q=80"
-    alt="Financial trading floor"
-    loading="lazy"
-  />
-  <span class="editorial-caption">Route5 — Enterprise AI Execution Platform</span>
-</section>
-
-<!-- TRUSTED BY -->
-<section id="trusted">
-  <div class="trusted-inner">
-    <p class="trusted-label">Trusted by the world's leading financial institutions</p>
-    <div class="trusted-logos" role="list" aria-label="Partner organisations">
-      <span role="listitem">JPMorgan</span>
-      <span role="listitem">UBS</span>
-      <span role="listitem">Goldman Sachs</span>
-      <span role="listitem">HSBC</span>
-      <span role="listitem">OpenAI</span>
-      <span role="listitem">Anthropic</span>
-    </div>
-  </div>
-</section>
-
-<!-- STATEMENT -->
-<section id="statement">
-  <div class="wrap">
-    <div class="statement-grid fade-up">
-      <div>
-        <p class="eyebrow">The problem</p>
-        <h2 class="serif-h2">Enterprise AI is stuck at the door</h2>
+<section id="logos">
+  <div class="lw">
+    <p class="ll">Targeting teams at</p>
+    <div class="lr">
+      <!-- JPMorgan Chase -->
+      <div class="bl" title="JPMorgan Chase">
+        <svg height="20" viewBox="0 0 110 20" xmlns="http://www.w3.org/2000/svg">
+          <text x="0" y="16" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="white">JPMorgan</text>
+        </svg>
       </div>
-      <div class="statement-body">
-        Organisations have invested billions in AI copilots and agents. Most aren't delivering ROI. The bottleneck isn't model quality — it's that <strong>AI agents cannot operate inside legacy systems.</strong>
-        <br><br>
-        Critical business logic is buried in Java, .NET, and COBOL applications: no APIs, no interfaces, no way in. A human clicks through ten screens to book a trade. An AI agent can't replicate that because the capability only exists as an implicit workflow locked behind a UI.
-        <br><br>
-        Route5 solves this. We observe your systems in real runtime environments, extract those implicit workflows, and generate thin orchestration wrappers AI agents can call directly — <strong>without touching a line of production code.</strong>
+      <!-- UBS -->
+      <div class="bl" title="UBS">
+        <svg height="24" viewBox="0 0 56 24" xmlns="http://www.w3.org/2000/svg">
+          <rect width="56" height="24" rx="3" fill="white"/>
+          <text x="7" y="18" font-family="Arial,sans-serif" font-size="13" font-weight="900" fill="#E60000" letter-spacing="3">UBS</text>
+        </svg>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- HOW IT WORKS -->
-<section id="how">
-  <div class="wrap">
-    <div class="how-top fade-up">
-      <div>
-        <p class="eyebrow">How it works</p>
-        <h2 class="serif-h2">From human workflow<br>to AI-callable tool</h2>
+      <!-- Goldman Sachs -->
+      <div class="bl" title="Goldman Sachs">
+        <svg height="20" viewBox="0 0 130 20" xmlns="http://www.w3.org/2000/svg">
+          <text x="0" y="16" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="white">Goldman Sachs</text>
+        </svg>
       </div>
-      <p class="how-note">Non-invasive. Read-only access to production. No code changes. Validated end-to-end before any agent touches a live system.</p>
-    </div>
-    <div class="steps fade-up">
-      <div class="step">
-        <p class="step-n">01 — INGEST</p>
-        <h3>Point at your codebase</h3>
-        <p>Connect Route5 to your legacy repo and test environment. Supports Java 6–21, Spring, Hibernate, EJB, Oracle, SQL Server, PostgreSQL, and MySQL.</p>
+      <!-- HSBC -->
+      <div class="bl" title="HSBC">
+        <svg height="26" viewBox="0 0 80 26" xmlns="http://www.w3.org/2000/svg">
+          <rect width="26" height="26" fill="white"/>
+          <polygon points="13,1 25,8 25,18 13,25 1,18 1,8" fill="#DB0011"/>
+          <polygon points="13,1 25,8 13,13" fill="white"/>
+          <polygon points="25,18 13,13 25,8" fill="#DB0011" opacity="0.6"/>
+          <polygon points="13,25 1,18 13,13" fill="white"/>
+          <polygon points="1,8 13,13 1,18" fill="#DB0011" opacity="0.6"/>
+          <text x="32" y="18" font-family="Arial,sans-serif" font-size="13" font-weight="900" fill="white" letter-spacing="1">HSBC</text>
+        </svg>
       </div>
-      <div class="step">
-        <p class="step-n">02 — RECORD</p>
-        <h3>Capture a real workflow</h3>
-        <p>A developer performs the workflow once. Route5 captures UI events, backend call stacks, database queries, and every side effect across the full stack.</p>
+      <!-- OpenAI -->
+      <div class="bl" title="OpenAI">
+        <svg height="20" viewBox="0 0 70 20" xmlns="http://www.w3.org/2000/svg">
+          <text x="0" y="16" font-family="Arial,sans-serif" font-size="14" font-weight="400" fill="white">OpenAI</text>
+        </svg>
       </div>
-      <div class="step">
-        <p class="step-n">03 — ANALYZE</p>
-        <h3>AI fuses the signals</h3>
-        <p>Source code structure, runtime traces, and UI workflow signals are fused into a high-fidelity context graph. Business logic is inferred and modelled.</p>
-      </div>
-      <div class="step">
-        <p class="step-n">04 — GENERATE</p>
-        <h3>MCP tools &amp; APIs</h3>
-        <p>Route5 generates REST APIs, Python SDKs, and MCP servers — complete with input schemas, guardrails, observability instrumentation, and test suites.</p>
-      </div>
-      <div class="step">
-        <p class="step-n">05 — VALIDATE</p>
-        <h3>Behavioral parity check</h3>
-        <p>Generated wrappers run against the original system. DB state, outputs, side effects, and events must match exactly before anything is approved for agent use.</p>
-      </div>
-      <div class="step">
-        <p class="step-n">06 — DEPLOY</p>
-        <h3>Human approval, then ship</h3>
-        <p>No capability is deployed without explicit sign-off. Runs on Kubernetes, local runtime, or your internal service mesh. Entirely on-premise, BYO LLM.</p>
+      <!-- Anthropic -->
+      <div class="bl" title="Anthropic">
+        <svg height="20" viewBox="0 0 86 20" xmlns="http://www.w3.org/2000/svg">
+          <text x="0" y="16" font-family="Arial,sans-serif" font-size="14" font-weight="400" fill="white">Anthropic</text>
+        </svg>
       </div>
     </div>
   </div>
 </section>
 
-<!-- PLATFORM -->
-<section id="platform">
-  <div class="wrap">
-    <div class="fade-up">
-      <p class="eyebrow">Platform</p>
-      <h2 class="serif-h2">Everything agents need<br>to operate safely</h2>
-    </div>
-    <div class="platform-grid fade-up">
-      <div class="platform-card">
-        <div class="platform-icon" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9h14M9 2l7 7-7 7"/></svg>
-        </div>
-        <h3>MCP-native tool calling</h3>
-        <p>Every extracted capability is published as a typed MCP tool. Claude, GPT-4o, or any MCP-compatible agent can invoke it immediately — no custom integration required.</p>
-      </div>
-      <div class="platform-card">
-        <div class="platform-icon" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="12" height="12" rx="2"/><path d="M6 9l2 2 4-4"/></svg>
-        </div>
-        <h3>Guardrails by default</h3>
-        <p>Role-based bot identity, input validation, rate limiting, PII masking, and rollback protection are generated alongside every capability — not an afterthought.</p>
-      </div>
-      <div class="platform-card">
-        <div class="platform-icon" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l4-4 4 4 4-6"/></svg>
-        </div>
-        <h3>Behavioral parity testing</h3>
-        <p>Unit, integration, and parity tests are auto-generated and validated against the original system. A side-by-side diff report is produced for every capability.</p>
-      </div>
-      <div class="platform-card">
-        <div class="platform-icon" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v4M9 12v4M2 9h4M12 9h4"/><circle cx="9" cy="9" r="3"/></svg>
-        </div>
-        <h3>Full observability</h3>
-        <p>OpenTelemetry tracing, structured JSON logging, and a complete audit trail from raw execution trace to AI proposal to human decision — shipped with every release.</p>
-      </div>
-      <div class="platform-card">
-        <div class="platform-icon" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="10" rx="2"/><path d="M6 5V4a3 3 0 0 1 6 0v1"/></svg>
-        </div>
-        <h3>On-premise &amp; BYO LLM</h3>
-        <p>All components run in your infrastructure. No data leaves your environment. Bring your own model key: Azure OpenAI, AWS Bedrock, or fully self-hosted models.</p>
-      </div>
-      <div class="platform-card">
-        <div class="platform-icon" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h12M3 9h12M3 12h8"/></svg>
-        </div>
-        <h3>REST, gRPC, SDK, or MCP</h3>
-        <p>Generated capabilities are available as REST APIs, gRPC endpoints, Python SDKs, standalone microservices, or message-driven endpoints — your choice of interface.</p>
+<section id="statement" class="sec">
+  <div class="w">
+    <div class="sg fu">
+      <div><p class="ey">The problem</p><h2>AI can't get into<br><strong>legacy systems</strong></h2></div>
+      <div class="sb">
+        You've invested in AI. It's not delivering. The bottleneck isn't the model — it's that <strong>your legacy systems have no AI interface.</strong><br><br>
+        Critical logic is buried in Java, .NET, and COBOL built before APIs existed. A human clicks through ten screens to book a trade. An AI agent can't do the same.<br><br>
+        Route5 extracts those workflows and makes them callable. <strong>Without touching production code.</strong>
       </div>
     </div>
   </div>
 </section>
 
-<!-- METRICS -->
-<section id="metrics">
-  <div class="wrap">
-    <div class="fade-up">
-      <p class="eyebrow">Results</p>
-      <h2 class="serif-h2">Designed for measurable ROI</h2>
+<section id="how" class="sec">
+  <div class="w">
+    <div class="ht fu">
+      <div><p class="ey">How it works</p><h2>From workflow<br><strong>to MCP tool</strong></h2></div>
+      <p class="hn">Read-only access to production. No code changes. Human sign-off at every stage.</p>
     </div>
-    <div class="metrics-grid fade-up">
-      <div class="metric">
-        <div class="metric-num"><em>&lt;1</em> wk</div>
-        <div class="metric-label">Time to first AI-callable capability from a legacy system</div>
-      </div>
-      <div class="metric">
-        <div class="metric-num"><em>5+</em></div>
-        <div class="metric-label">AI use cases enabled per customer within the first six months</div>
-      </div>
-      <div class="metric">
-        <div class="metric-num"><em>95</em>%</div>
-        <div class="metric-label">Behavioral parity validation pass rate across generated capabilities</div>
-      </div>
-      <div class="metric">
-        <div class="metric-num"><em>70</em>%</div>
-        <div class="metric-label">Reduction in manual operator steps per automated workflow</div>
-      </div>
+    <div class="steps fu">
+      <div class="step"><p class="sn">01 / INGEST</p><h3>Connect your repo</h3><p>Point Route5 at your codebase and test environment. Java 6–21, Spring, Hibernate, Oracle, SQL Server supported.</p></div>
+      <div class="step"><p class="sn">02 / RECORD</p><h3>Capture the workflow</h3><p>A developer runs the workflow once. Route5 captures every UI action, backend call, and database query across the full stack.</p></div>
+      <div class="step"><p class="sn">03 / ANALYZE</p><h3>AI maps the logic</h3><p>Source code, runtime traces, and UI signals are fused into a context graph. Business logic is inferred automatically.</p></div>
+      <div class="step"><p class="sn">04 / GENERATE</p><h3>APIs &amp; MCP tools out</h3><p>Route5 outputs REST APIs, Python SDKs, and MCP servers — with schemas, guardrails, tests, and observability included.</p></div>
+      <div class="step"><p class="sn">05 / VALIDATE</p><h3>Parity check</h3><p>Generated wrappers run against the original system. DB state, outputs, and side effects must match exactly before approval.</p></div>
+      <div class="step"><p class="sn">06 / DEPLOY</p><h3>Approve and ship</h3><p>Every capability requires human sign-off. Deployed to Kubernetes or your internal mesh. Fully on-premise.</p></div>
     </div>
   </div>
 </section>
 
-<!-- CONTACT -->
-<section id="contact">
-  <div class="wrap">
-    <div class="contact-grid fade-up">
-      <div>
-        <p class="eyebrow">Early access</p>
-        <h2 class="serif-h2">Ready to unlock your legacy systems for AI?</h2>
-        <p class="contact-sub">We're onboarding a small number of enterprise design partners. No production changes required. Results in weeks.</p>
-        <p class="contact-note">Targeting teams at JPMorgan, UBS, Goldman Sachs, and other financial institutions running large-scale Java and .NET systems.</p>
+<section id="platform" class="sec">
+  <div class="w">
+    <div class="fu"><p class="ey">Platform</p><h2>Built for <strong>enterprise safety</strong></h2></div>
+    <div class="pg fu">
+      <div class="pc"><div class="pi"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 16 16"><path d="M2 8h12M8 2l6 6-6 6"/></svg></div><h3>MCP-native</h3><p>Every capability is a typed MCP tool. Claude, GPT-4o, or any MCP agent can invoke it with no custom integration.</p></div>
+      <div class="pc"><div class="pi"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8l2 2 4-4"/></svg></div><h3>Guardrails by default</h3><p>RBAC, input validation, rate limiting, PII masking, and rollback — generated automatically, not added later.</p></div>
+      <div class="pc"><div class="pi"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 16 16"><path d="M2 11l3-3 3 3 4-5"/></svg></div><h3>Parity validation</h3><p>Auto-generated parity tests against the original system. Side-by-side diff report for every capability.</p></div>
+      <div class="pc"><div class="pi"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/></svg></div><h3>Full observability</h3><p>OpenTelemetry tracing, JSON logs, and a complete audit trail from trace to human decision.</p></div>
+      <div class="pc"><div class="pi"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 16 16"><rect x="1" y="5" width="14" height="9" rx="2"/><path d="M5 5V4a3 3 0 0 1 6 0v1"/></svg></div><h3>On-premise &amp; BYO LLM</h3><p>Nothing leaves your infrastructure. Azure OpenAI, AWS Bedrock, or self-hosted — your choice.</p></div>
+      <div class="pc"><div class="pi"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 16 16"><path d="M2 5h12M2 8h12M2 11h8"/></svg></div><h3>REST, gRPC, SDK, MCP</h3><p>Output format is your choice — REST API, gRPC, Python SDK, microservice, or MCP server.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="metrics" class="sec">
+  <div class="w">
+    <div class="fu"><p class="ey">Results</p><h2>Measurable <strong>from week one</strong></h2></div>
+    <div class="mr fu">
+      <div class="me"><div class="mn"><em>&lt;1</em> wk</div><div class="ml">Time to first AI-callable capability</div></div>
+      <div class="me"><div class="mn"><em>5+</em></div><div class="ml">AI use cases per customer in 6 months</div></div>
+      <div class="me"><div class="mn"><em>95</em>%</div><div class="ml">Parity validation pass rate</div></div>
+      <div class="me"><div class="mn"><em>70</em>%</div><div class="ml">Reduction in manual operator steps</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="sec">
+  <div class="w">
+    <div class="cg fu">
+      <div class="cl">
+        <p class="ey">Early access</p>
+        <h2>Unlock your<br><strong>legacy systems for AI</strong></h2>
+        <p>We're onboarding a small number of enterprise design partners. No production changes. Results in weeks.</p>
+        <p style="font-size:13px;color:var(--d)">Targeting Java and .NET teams at JPMorgan, UBS, Goldman Sachs, and similar institutions.</p>
       </div>
       <div>
-        <form class="form" id="contact-form" novalidate>
-          <!-- Formspree honeypot + config -->
-          <input type="hidden" name="_subject" value="New demo request — Route5" />
-          <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off" />
-
-          <div class="form-row">
-            <div class="form-group" id="fg-first">
-              <label for="first">First name</label>
-              <input type="text" id="first" name="first" placeholder="Jane" autocomplete="given-name" />
-              <span class="form-error">Required.</span>
-            </div>
-            <div class="form-group" id="fg-last">
-              <label for="last">Last name</label>
-              <input type="text" id="last" name="last" placeholder="Smith" autocomplete="family-name" />
-              <span class="form-error">Required.</span>
-            </div>
+        <form class="form" id="cform" novalidate>
+          <input type="hidden" name="_subject" value="New demo request — Route5"/>
+          <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off"/>
+          <div class="fr">
+            <div class="fg" id="fg-fn"><label>First name</label><input type="text" name="first" id="fn" placeholder="Jane" autocomplete="given-name"/><span class="fe">Required.</span></div>
+            <div class="fg" id="fg-ln"><label>Last name</label><input type="text" name="last" id="ln" placeholder="Smith" autocomplete="family-name"/><span class="fe">Required.</span></div>
           </div>
-          <div class="form-group" id="fg-email">
-            <label for="email">Work email</label>
-            <input type="email" id="email" name="email" placeholder="jane@jpmorgan.com" autocomplete="email" />
-            <span class="form-error">Please enter a valid work email.</span>
+          <div class="fg" id="fg-em"><label>Work email</label><input type="email" name="email" id="em" placeholder="jane@jpmorgan.com" autocomplete="email"/><span class="fe">Valid work email required.</span></div>
+          <div class="fg" id="fg-co"><label>Company</label><input type="text" name="company" id="co" placeholder="JPMorgan Chase" autocomplete="organization"/><span class="fe">Required.</span></div>
+          <div class="fg" id="fg-ro"><label>Role</label>
+            <select name="role" id="ro"><option value="">Select role</option><option>CIO / CTO</option><option>VP Engineering</option><option>Enterprise Architect</option><option>AI / ML Lead</option><option>DevOps / SRE</option><option>Business Operations</option><option>Other</option></select>
+            <span class="fe">Required.</span>
           </div>
-          <div class="form-group" id="fg-company">
-            <label for="company">Company</label>
-            <input type="text" id="company" name="company" placeholder="JPMorgan Chase" autocomplete="organization" />
-            <span class="form-error">Required.</span>
-          </div>
-          <div class="form-group" id="fg-role">
-            <label for="role">Role</label>
-            <select id="role" name="role">
-              <option value="">Select your role</option>
-              <option>CIO / CTO</option>
-              <option>VP Engineering</option>
-              <option>Enterprise Architect</option>
-              <option>AI / ML Lead</option>
-              <option>DevOps / SRE</option>
-              <option>Business Operations</option>
-              <option>Other</option>
-            </select>
-            <span class="form-error">Please select your role.</span>
-          </div>
-          <div class="form-group">
-            <label for="message">What legacy systems are you working with? <span style="color:var(--dim)">(optional)</span></label>
-            <textarea id="message" name="message" placeholder="e.g. Java 8 trade booking system, Oracle DB, no external APIs…"></textarea>
-          </div>
-          <button type="submit" class="form-submit" id="form-btn">Request demo</button>
-          <p class="form-note">We'll respond within 1–2 business days.</p>
-          <div class="form-err-global" id="form-err-global">Something went wrong. Please email us at <a href="mailto:hello@route5.ai" style="color:#f87171;border-bottom:1px solid rgba(248,113,113,0.4)">hello@route5.ai</a></div>
+          <div class="fg"><label>Legacy systems <span style="text-transform:none;letter-spacing:0;font-weight:300;color:var(--d)">(optional)</span></label><textarea name="message" id="msg" placeholder="e.g. Java 8 trade booking, Oracle DB…"></textarea></div>
+          <button type="submit" class="fs" id="fsub">Request demo</button>
+          <p class="fn2">We respond within 1–2 business days.</p>
+          <div class="feg" id="feg">Something went wrong. Email <a href="mailto:hello@route5.ai" style="color:#f87171">hello@route5.ai</a></div>
         </form>
-        <div class="form-success" id="form-success">
-          <h3>We'll be in touch.</h3>
-          <p>Thanks for your interest in Route5. We'll reach out within 1–2 business days to schedule a call.</p>
-        </div>
+        <div class="fok" id="fok"><h3>We'll be in touch.</h3><p>Thanks for your interest. We'll reach out within 1–2 business days.</p></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- FOOTER -->
 <footer>
-  <div class="wrap">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <a href="#" class="logo" aria-label="Route5 home">
-          <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-            <rect width="28" height="28" rx="6" fill="#1a1a1a"/>
-            <path d="M7 10h7a3.5 3.5 0 0 1 0 7H7" stroke="#19a26c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M7 17h4l4 5" stroke="#19a26c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M17.5 9h4L20 13.5a2.5 2.5 0 1 1-2 4" stroke="rgba(255,255,255,0.3)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <div class="w">
+    <div class="fi">
+      <div class="fb">
+        <a href="#" class="logo">
+          <svg width="26" height="26" viewBox="0 0 30 30" fill="none">
+            <rect width="30" height="30" rx="7" fill="#111"/>
+            <path d="M5 7h6.5a4 4 0 0 1 0 8H5V7z" stroke="#19a26c" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5 15h3.5l4 7" stroke="#19a26c" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M17 7h7l-3.5 5" stroke="rgba(255,255,255,0.55)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M13.5 12h6.5a3.5 3.5 0 1 1 0 7h-3" stroke="rgba(255,255,255,0.55)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           route5
         </a>
-        <p>The AI execution layer for enterprise systems. Unlocking legacy Java, .NET, and COBOL for AI agents.</p>
+        <p>AI execution layer for enterprise. Unlocking legacy Java and .NET for AI agents.</p>
       </div>
-      <div class="footer-col">
-        <h4>Product</h4>
-        <ul>
-          <li><a href="#statement">Overview</a></li>
-          <li><a href="#how">How it works</a></li>
-          <li><a href="#platform">Platform</a></li>
-          <li><a href="#metrics">Results</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Company</h4>
-        <ul>
-          <li><a href="#contact">About</a></li>
-          <li><a href="mailto:careers@route5.ai">Careers</a></li>
-          <li><a href="mailto:press@route5.ai">Press</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Contact</h4>
-        <ul>
-          <li><button onclick="scrollToContact()">Request demo</button></li>
-          <li><a href="mailto:hello@route5.ai">hello@route5.ai</a></li>
-          <li><button onclick="openLoginModal()">Log In</button></li>
-        </ul>
-      </div>
+      <div class="fc"><h4>Product</h4><ul><li><a href="#statement">Overview</a></li><li><a href="#how">How it works</a></li><li><a href="#platform">Platform</a></li><li><a href="#metrics">Results</a></li></ul></div>
+      <div class="fc"><h4>Company</h4><ul><li><a href="mailto:careers@route5.ai">Careers</a></li><li><a href="mailto:press@route5.ai">Press</a></li></ul></div>
+      <div class="fc"><h4>Contact</h4><ul><li><button onclick="goContact()">Request demo</button></li><li><a href="mailto:hello@route5.ai">hello@route5.ai</a></li><li><button onclick="openLogin()">Log In</button></li></ul></div>
     </div>
-    <div class="footer-bottom">
-      <span>© 2026 Route5 AI, Inc. All rights reserved.</span>
-      <span>
-        <a href="privacy.html">Privacy Policy</a>
-        &nbsp;·&nbsp;
-        <a href="terms.html">Terms of Service</a>
-      </span>
-    </div>
+    <div class="fb2"><span>© 2026 Route5 AI, Inc.</span><span><a href="privacy.html">Privacy</a> &nbsp;·&nbsp; <a href="terms.html">Terms</a></span></div>
   </div>
 </footer>
 
 <script>
-  // ── Announce bar ──
-  document.getElementById('bar-close').addEventListener('click', () => {
-    document.getElementById('bar').classList.add('hidden');
-  });
-
-  // ── Mobile menu ──
-  const ham = document.getElementById('hamburger');
-  const mmenu = document.getElementById('mobile-menu');
-
-  function closeMobileMenu() {
-    mmenu.classList.remove('open');
-    ham.classList.remove('open');
-    ham.setAttribute('aria-expanded', 'false');
-    document.body.style.overflow = '';
+document.getElementById('bar-x').onclick=()=>document.getElementById('bar').classList.add('gone');
+const ham=document.getElementById('ham'),mm=document.getElementById('mm');
+function closeMenu(){mm.classList.remove('open');ham.classList.remove('open');ham.setAttribute('aria-expanded','false');document.body.style.overflow='';}
+ham.onclick=()=>{const o=mm.classList.toggle('open');ham.classList.toggle('open',o);ham.setAttribute('aria-expanded',o?'true':'false');document.body.style.overflow=o?'hidden':'';}
+const lm=document.getElementById('lm');
+function openLogin(){lm.classList.add('open');document.body.style.overflow='hidden';}
+function closeLogin(){lm.classList.remove('open');document.body.style.overflow='';}
+lm.onclick=e=>{if(e.target===lm)closeLogin();}
+function goContact(){document.getElementById('contact').scrollIntoView({behavior:'smooth'});}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();closeLogin();}});
+const secs=document.querySelectorAll('section[id]'),nas=document.querySelectorAll('.nl a');
+window.addEventListener('scroll',()=>{let c='';secs.forEach(s=>{if(window.scrollY>=s.offsetTop-130)c=s.id;});nas.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+c));},{passive:true});
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:.08});
+document.querySelectorAll('.fu').forEach(el=>obs.observe(el));
+const form=document.getElementById('cform'),fok=document.getElementById('fok'),feg=document.getElementById('feg'),fsub=document.getElementById('fsub');
+function se(id,bad){const fg=document.getElementById('fg-'+id);if(!fg)return!bad;fg.classList.toggle('err',bad);return!bad;}
+form.querySelectorAll('input,select,textarea').forEach(el=>el.addEventListener('input',()=>el.closest('.fg')?.classList.remove('err')));
+form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const fn=document.getElementById('fn').value.trim(),ln=document.getElementById('ln').value.trim(),em=document.getElementById('em').value.trim(),co=document.getElementById('co').value.trim(),ro=document.getElementById('ro').value;
+  const re=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const ok=[se('fn',!fn),se('ln',!ln),se('em',!re.test(em)),se('co',!co),se('ro',!ro)].every(Boolean);
+  if(!ok)return;
+  fsub.disabled=true;fsub.textContent='Sending…';feg.classList.remove('show');
+  try{
+    const r=await fetch('https://formspree.io/f/xpwzozqg',{method:'POST',headers:{'Accept':'application/json','Content-Type':'application/json'},body:JSON.stringify({first:fn,last:ln,email:em,company:co,role:ro,message:document.getElementById('msg').value,_subject:'New demo request — Route5'})});
+    if(r.ok){form.style.display='none';fok.classList.add('show');}else throw 0;
+  }catch{
+    const s=encodeURIComponent('Demo request — Route5'),b=encodeURIComponent('Name: '+fn+' '+ln+'\nEmail: '+em+'\nCompany: '+co+'\nRole: '+ro+'\n\n'+document.getElementById('msg').value);
+    window.location.href='mailto:hello@route5.ai?subject='+s+'&body='+b;
+    fsub.disabled=false;fsub.textContent='Request demo';
   }
-
-  ham.addEventListener('click', () => {
-    const open = mmenu.classList.toggle('open');
-    ham.classList.toggle('open', open);
-    ham.setAttribute('aria-expanded', open ? 'true' : 'false');
-    document.body.style.overflow = open ? 'hidden' : '';
-  });
-
-  // Close mobile menu on Escape
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      closeMobileMenu();
-      closeLoginModal();
-    }
-  });
-
-  // ── Login modal ──
-  const loginModal = document.getElementById('login-modal');
-
-  function openLoginModal() {
-    loginModal.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeLoginModal() {
-    loginModal.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-
-  loginModal.addEventListener('click', e => {
-    if (e.target === loginModal) closeLoginModal();
-  });
-
-  // ── Scroll to contact ──
-  function scrollToContact() {
-    document.getElementById('contact').scrollIntoView({ behavior: 'smooth' });
-  }
-
-  // ── Active nav highlight ──
-  const sections = document.querySelectorAll('section[id]');
-  const navAs = document.querySelectorAll('.nav-links a');
-  window.addEventListener('scroll', () => {
-    let cur = '';
-    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) cur = s.id; });
-    navAs.forEach(a => {
-      a.classList.toggle('active', a.getAttribute('href') === '#' + cur);
-    });
-  }, { passive: true });
-
-  // ── Scroll fade ──
-  const observer = new IntersectionObserver(
-    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); }),
-    { threshold: 0.08 }
-  );
-  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
-
-  // ── Contact form — real submission via Formspree ──
-  const form = document.getElementById('contact-form');
-  const successBox = document.getElementById('form-success');
-  const errGlobal = document.getElementById('form-err-global');
-  const submitBtn = document.getElementById('form-btn');
-
-  function setError(id, bad) {
-    const fg = document.getElementById('fg-' + id);
-    if (!fg) return !bad;
-    fg.classList.toggle('err', bad);
-    return !bad;
-  }
-
-  // Clear errors on interaction
-  form.querySelectorAll('input, select, textarea').forEach(el => {
-    el.addEventListener('input', () => el.closest('.form-group')?.classList.remove('err'));
-  });
-
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-
-    const first   = document.getElementById('first').value.trim();
-    const last    = document.getElementById('last').value.trim();
-    const email   = document.getElementById('email').value.trim();
-    const company = document.getElementById('company').value.trim();
-    const role    = document.getElementById('role').value;
-    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    const ok = [
-      setError('first',   !first),
-      setError('last',    !last),
-      setError('email',   !emailRe.test(email)),
-      setError('company', !company),
-      setError('role',    !role),
-    ].every(Boolean);
-
-    if (!ok) return;
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Sending…';
-    errGlobal.classList.remove('show');
-
-    try {
-      // Formspree endpoint — replace YOUR_FORM_ID after creating a free account at formspree.io
-      // Until then, falls back to mailto
-      const res = await fetch('https://formspree.io/f/xpwzozqg', {
-        method: 'POST',
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          first, last, email, company, role,
-          message: document.getElementById('message').value,
-          _subject: 'New demo request — Route5',
-        }),
-      });
-
-      if (res.ok) {
-        form.style.display = 'none';
-        successBox.classList.add('show');
-      } else {
-        throw new Error('Network response not ok');
-      }
-    } catch {
-      // Fallback: open mailto
-      const subject = encodeURIComponent('Demo request — Route5');
-      const body = encodeURIComponent(`Name: ${first} ${last}\nEmail: ${email}\nCompany: ${company}\nRole: ${role}\n\n${document.getElementById('message').value}`);
-      window.location.href = `mailto:hello@route5.ai?subject=${subject}&body=${body}`;
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Request demo';
-    }
-  });
+});
 </script>
 </body>
 </html>
