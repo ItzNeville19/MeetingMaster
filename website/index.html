@@ -97,7 +97,7 @@
     .lr{display:flex;align-items:center;justify-content:center;gap:44px;flex-wrap:wrap;row-gap:28px}
     .li{display:flex;align-items:center;gap:10px;opacity:.28;transition:opacity .2s;cursor:default;color:#fff;white-space:nowrap}
     .li:hover{opacity:.68}
-    .li img{height:28px;width:auto;flex-shrink:0;display:block;object-fit:contain}
+    .li img{height:28px;width:auto;filter:grayscale(100%) brightness(0) invert(1);flex-shrink:0;display:block;object-fit:contain}
     .li svg{height:28px;width:28px;flex-shrink:0;display:block}
     .li-wm{font-size:15px;font-weight:300;letter-spacing:.02em;color:#fff}
 
@@ -289,41 +289,27 @@
   <div class="lw">
     <p class="ll">Targeting teams at</p>
     <div class="lr">
-      <!-- Simple Icons CDN — already white SVGs, no filter needed -->
+      <!-- All Simple Icons CDN — white SVGs, filter converts any to white -->
       <div class="li"><img src="https://cdn.simpleicons.org/openai/ffffff" alt="OpenAI" loading="lazy"/><span class="li-wm">OpenAI</span></div>
       <div class="li"><img src="https://cdn.simpleicons.org/anthropic/ffffff" alt="Anthropic" loading="lazy"/><span class="li-wm">Anthropic</span></div>
-      <!-- Simple Icons for Goldman Sachs and HSBC -->
       <div class="li"><img src="https://cdn.simpleicons.org/goldmansachs/ffffff" alt="Goldman Sachs" loading="lazy"/><span class="li-wm">Goldman Sachs</span></div>
       <div class="li"><img src="https://cdn.simpleicons.org/hsbc/ffffff" alt="HSBC" loading="lazy"/><span class="li-wm">HSBC</span></div>
-      <!-- Inline SVG monograms for JPMorgan, UBS, Morgan Stanley -->
-      <!-- JPMorgan: regular octagon with centre dot -->
+      <!-- Chase = JPMorgan Chase's brand mark on Simple Icons -->
+      <div class="li"><img src="https://cdn.simpleicons.org/chase/ffffff" alt="JPMorgan Chase" loading="lazy"/><span class="li-wm">JPMorgan Chase</span></div>
+      <!-- UBS: three keys (their iconic brand mark) -->
       <div class="li">
-        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="19,2 26,9 26,19 19,26 9,26 2,19 2,9 9,2" stroke="white" stroke-width="1.5"/>
-          <circle cx="14" cy="14" r="3" fill="white"/>
-        </svg>
-        <span class="li-wm">JPMorgan Chase</span>
-      </div>
-      <!-- UBS: three keys (circle + stem × 3) -->
-      <div class="li">
-        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="6" cy="9" r="3.5" stroke="white" stroke-width="1.5"/>
-          <line x1="6" y1="12.5" x2="6" y2="24" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="14" cy="9" r="3.5" stroke="white" stroke-width="1.5"/>
-          <line x1="14" y1="12.5" x2="14" y2="24" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="22" cy="9" r="3.5" stroke="white" stroke-width="1.5"/>
-          <line x1="22" y1="12.5" x2="22" y2="24" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <svg viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="6" cy="8" r="4" stroke="white" stroke-width="1.8"/>
+          <rect x="4.5" y="11" width="3" height="15" fill="white" rx="1"/>
+          <circle cx="18" cy="8" r="4" stroke="white" stroke-width="1.8"/>
+          <rect x="16.5" y="11" width="3" height="15" fill="white" rx="1"/>
+          <circle cx="30" cy="8" r="4" stroke="white" stroke-width="1.8"/>
+          <rect x="28.5" y="11" width="3" height="15" fill="white" rx="1"/>
         </svg>
         <span class="li-wm">UBS</span>
       </div>
-      <!-- Morgan Stanley: ascending bars (markets/finance) -->
-      <div class="li">
-        <svg viewBox="0 0 28 28" fill="white" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="19" width="6" height="7" rx="1"/>
-          <rect x="11" y="13" width="6" height="13" rx="1"/>
-          <rect x="20" y="7" width="6" height="19" rx="1"/>
-        <span class="li-wm">Morgan Stanley</span>
-      </div>
+      <!-- Morgan Stanley: wordmark only (their logo IS their name) -->
+      <div class="li"><span class="li-wm">Morgan Stanley</span></div>
     </div>
   </div>
 </section>
