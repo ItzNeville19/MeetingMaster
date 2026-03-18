@@ -98,6 +98,7 @@
     .li{display:flex;align-items:center;gap:10px;opacity:.28;transition:opacity .2s;cursor:default;color:#fff;white-space:nowrap}
     .li:hover{opacity:.68}
     .li img{height:28px;width:28px;filter:grayscale(100%) brightness(0) invert(1);border-radius:5px;object-fit:contain;flex-shrink:0;display:block}
+    .li svg{height:28px;width:28px;flex-shrink:0;display:block}
     .li-wm{font-size:15px;font-weight:300;letter-spacing:.02em;color:#fff}
 
     /* SECTIONS */
@@ -291,12 +292,31 @@
       <!-- Simple Icons CDN for tech companies — reliable, correct SVGs -->
       <div class="li"><img src="https://cdn.simpleicons.org/openai/ffffff" alt="OpenAI" loading="lazy"/><span class="li-wm">OpenAI</span></div>
       <div class="li"><img src="https://cdn.simpleicons.org/anthropic/ffffff" alt="Anthropic" loading="lazy"/><span class="li-wm">Anthropic</span></div>
-      <!-- Google favicon API for banks -->
-      <div class="li"><img src="https://www.google.com/s2/favicons?domain=jpmorgan.com&sz=64" alt="JPMorgan Chase" loading="lazy"/><span class="li-wm">JPMorgan Chase</span></div>
-      <div class="li"><img src="https://www.google.com/s2/favicons?domain=goldmansachs.com&sz=64" alt="Goldman Sachs" loading="lazy"/><span class="li-wm">Goldman Sachs</span></div>
-      <div class="li"><img src="https://www.google.com/s2/favicons?domain=ubs.com&sz=64" alt="UBS" loading="lazy"/><span class="li-wm">UBS</span></div>
-      <div class="li"><img src="https://www.google.com/s2/favicons?domain=hsbc.com&sz=64" alt="HSBC" loading="lazy"/><span class="li-wm">HSBC</span></div>
-      <div class="li"><img src="https://www.google.com/s2/favicons?domain=morganstanley.com&sz=64" alt="Morgan Stanley" loading="lazy"/><span class="li-wm">Morgan Stanley</span></div>
+      <!-- Simple Icons for Goldman Sachs and HSBC -->
+      <div class="li"><img src="https://cdn.simpleicons.org/goldmansachs/ffffff" alt="Goldman Sachs" loading="lazy"/><span class="li-wm">Goldman Sachs</span></div>
+      <div class="li"><img src="https://cdn.simpleicons.org/hsbc/ffffff" alt="HSBC" loading="lazy"/><span class="li-wm">HSBC</span></div>
+      <!-- Inline SVG monograms for JPMorgan, UBS, Morgan Stanley -->
+      <div class="li">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="26" height="26" rx="4" stroke="white" stroke-width="1.5"/>
+          <path d="M5 19V9h2.5l3 6.5L13.5 9H16v10h-2v-6.5l-2.5 5h-2L7 12.5V19H5z" fill="white"/>
+        </svg>
+        <span class="li-wm">JPMorgan Chase</span>
+      </div>
+      <div class="li">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="26" height="26" rx="4" stroke="white" stroke-width="1.5"/>
+          <path d="M6 9h4.5c2 0 3.5 1 3.5 3s-1.5 3-3.5 3H8v4H6V9zm2 5h2c1 0 2-.5 2-2s-1-2-2-2H8v4zm6-5h4c2.5 0 4 1.5 4 5s-1.5 5-4 5h-4V9zm2 8h2c1.5 0 2-1.2 2-3s-.5-3-2-3h-2v6z" fill="white"/>
+        </svg>
+        <span class="li-wm">UBS</span>
+      </div>
+      <div class="li">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="26" height="26" rx="4" stroke="white" stroke-width="1.5"/>
+          <path d="M5 9l4 10 4-7 4 7 4-10" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="li-wm">Morgan Stanley</span>
+      </div>
     </div>
   </div>
 </section>
